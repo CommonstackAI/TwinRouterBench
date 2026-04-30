@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "policy_name": "WALLCLOCK_5MIN",
+  "wallclock_ttl_sec": 300,
+  "notes": "Single official TTL policy for SWERouterBench leaderboard. Aligned with Anthropic ephemeral cache and OpenAI automatic prompt cache defaults. Routers MUST assume 300s TTL; extended 1h caches are not accepted for official submissions."
+}

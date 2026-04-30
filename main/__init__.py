@@ -1,0 +1,103 @@
+"""CommonRouterBench: tier-only routing supervision data and Section 11 nominal metrics."""
+
+from main.chat_messages import (
+    format_linear_messages_as_user_prompt,
+    linearize_messages_for_openai_compat,
+    question_bank_messages_to_classifier_prompt,
+)
+from main.dataset import (
+    DATA_DIR,
+    QUESTION_BANK_NAME,
+    QUESTION_BANK_PATH,
+    STATIC_DATA_DIR,
+    iter_question_bank,
+    iter_routing_supervision,
+    list_benchmarks,
+    list_question_bank_sources,
+    load_manifest,
+)
+from main.metrics import (
+    CaseMetrics,
+    aggregate_routerbench_metrics,
+    compute_case_savings,
+    routing_supervision_accuracy,
+    case_metrics_from_dict,
+)
+from main.router_llm import (
+    DEFAULT_ROUTER_SYSTEM_INSTRUCTION,
+    OpenAICompatRouterClassifier,
+    SystemPromptCacheMode,
+    TierPredictionResult,
+    build_system_content,
+    chat_completions_url,
+    parse_tier_response_to_id,
+    post_chat_completions,
+    tier_id_to_public_label,
+)
+from main.pricing import (
+    TIER_OUTPUT_USD_PER_1M,
+    StepCost,
+    model_to_tier,
+    path_nominal_cost_usd,
+    step_nominal_cost_usd,
+)
+from main.tiers import (
+    CN_TIER_TO_PUBLIC,
+    ID_TO_TIER,
+    PUBLIC_TIERS,
+    TIER_HIGH,
+    TIER_LOW,
+    TIER_MID,
+    TIER_MID_HIGH,
+    TIER_TO_ID,
+    public_tier_from_cn,
+    public_tier_from_id,
+    public_tier_to_id,
+)
+
+__all__ = [
+    "CN_TIER_TO_PUBLIC",
+    "CaseMetrics",
+    "DEFAULT_ROUTER_SYSTEM_INSTRUCTION",
+    "DATA_DIR",
+    "QUESTION_BANK_NAME",
+    "QUESTION_BANK_PATH",
+    "STATIC_DATA_DIR",
+    "OpenAICompatRouterClassifier",
+    "SystemPromptCacheMode",
+    "TierPredictionResult",
+    "ID_TO_TIER",
+    "PUBLIC_TIERS",
+    "StepCost",
+    "TIER_HIGH",
+    "TIER_LOW",
+    "TIER_MID",
+    "TIER_MID_HIGH",
+    "TIER_OUTPUT_USD_PER_1M",
+    "TIER_TO_ID",
+    "aggregate_routerbench_metrics",
+    "build_system_content",
+    "chat_completions_url",
+    "case_metrics_from_dict",
+    "compute_case_savings",
+    "format_linear_messages_as_user_prompt",
+    "iter_question_bank",
+    "linearize_messages_for_openai_compat",
+    "iter_routing_supervision",
+    "list_benchmarks",
+    "list_question_bank_sources",
+    "load_manifest",
+    "model_to_tier",
+    "parse_tier_response_to_id",
+    "post_chat_completions",
+    "path_nominal_cost_usd",
+    "public_tier_from_cn",
+    "question_bank_messages_to_classifier_prompt",
+    "public_tier_from_id",
+    "public_tier_to_id",
+    "routing_supervision_accuracy",
+    "tier_id_to_public_label",
+    "step_nominal_cost_usd",
+]
+
+__version__ = "0.1.0"

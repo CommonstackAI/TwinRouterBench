@@ -1,0 +1,37 @@
+{
+  "schema_version": 12,
+  "fetched_at": "2026-04-23",
+  "currency": "USD",
+  "unit": "per_1M_tokens",
+  "notes": "Published OpenRouter /api/v1/models pricing for the unified 4-model dual-router benchmarking pool, fetched_at above. Raw API values are USD per token strings; converted here to USD per 1M tokens (multiply by 1e6). cache_write_per_m falls back to input_per_m when OpenRouter does not publish input_cache_write (see pricing.py governance notes). Bump schema_version on every pricing change.",
+  "pricing": {
+    "anthropic/claude-opus-4.6": {
+      "input_per_m": 5.0,
+      "output_per_m": 25.0,
+      "cache_read_per_m": 0.5,
+      "cache_write_per_m": 6.25,
+      "source_url": "https://openrouter.ai/anthropic/claude-opus-4.6"
+    },
+    "google/gemini-3-flash-preview": {
+      "input_per_m": 0.5,
+      "output_per_m": 3.0,
+      "cache_read_per_m": 0.05,
+      "cache_write_per_m": 0.08333333333333334,
+      "source_url": "https://openrouter.ai/google/gemini-3-flash-preview"
+    },
+    "minimax/minimax-m2.7": {
+      "input_per_m": 0.3,
+      "output_per_m": 1.2,
+      "cache_read_per_m": 0.059,
+      "cache_write_per_m": 0.3,
+      "source_url": "https://openrouter.ai/minimax/minimax-m2.7"
+    },
+    "deepseek/deepseek-v3.2": {
+      "input_per_m": 0.252,
+      "output_per_m": 0.378,
+      "cache_read_per_m": 0.0252,
+      "cache_write_per_m": 0.252,
+      "source_url": "https://openrouter.ai/deepseek/deepseek-v3.2"
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "schema": "tier_only_question_bank",
+  "question_bank": "data/question_bank.jsonl",
+  "total_line_count": 970,
+  "target_fields": [
+    "target_tier",
+    "target_tier_id"
+  ],
+  "no_model_ids_in_records": true,
+  "sources": {
+    "pinchbench": {
+      "source_path": "test/pinchbench/mixed_model_data",
+      "line_count": 48,
+      "sample_fields": {
+        "benchmark": "pinchbench",
+        "benchmark_version": "mixed_model_validated_2026-04-15",
+        "pipeline_stage": "mixed_model_validated"
+      }
+    },
+    "swebench": {
+      "source_path": "swebench/swebench_verified_40_routing_supervision.jsonl",
+      "line_count": 336,
+      "sample_fields": {
+        "benchmark": "swebench",
+        "benchmark_version": "swebench_verified_40_2026-04-06_gtfix25_fullroute",
+        "pipeline_stage": "degradation_search_done"
+      }
+    },
+    "mtrag": {
+      "source_path": "mtrag/routing_supervision.jsonl",
+      "line_count": 193,
+      "sample_fields": {
+        "benchmark": "mtrag",
+        "benchmark_version": null,
+        "pipeline_stage": "ground_truth_ready"
+      }
+    },
+    "qmsum": {
+      "source_path": "qmsum/routing_supervision.jsonl",
+      "line_count": 145,
+      "sample_fields": {
+        "benchmark": "qmsum",
+        "benchmark_version": null,
+        "pipeline_stage": "ground_truth_ready"
+      }
+    },
+    "bfcl": {
+      "source_path": "bfcl/bfcl_routing_supervision.jsonl",
+      "line_count": 248,
+      "sample_fields": {
+        "benchmark": "bfcl",
+        "benchmark_version": "v4",
+        "pipeline_stage": "ground_truth_ready"
+      }
+    }
+  }
+}

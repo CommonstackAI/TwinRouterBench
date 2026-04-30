@@ -1,0 +1,10 @@
+{
+  "schema_version": 2,
+  "notes": "Hard-coded mapping from the four labels in the upstream semantic-router pretrained KNN (abdallah1008/semantic-router-ml-models -> knn_model.json, num_samples=1573) to concrete model_ids in the unified 4-model SWERouterBench pool. The pretrained KNN was trained on the open-source models (llama 1b/3b, mistral-7b, codellama-7b), which do not overlap with the OpenRouter production models used here; we map them by ascending proxy capability to the unified low/mid/mid_high/high pool tier. This is a lossy adapter: a strictly fair evaluation would retrain the KNN with labels drawn from {deepseek/deepseek-v3.2, minimax/minimax-m2.7, google/gemini-3-flash-preview, anthropic/claude-opus-4.6}. Kept here as part of the smoke plan (see plan §1 and §3.2). Every value must stay in sync with data/model_pool.json.",
+  "map": {
+    "llama-3.2-1b": "deepseek/deepseek-v3.2",
+    "llama-3.2-3b": "minimax/minimax-m2.7",
+    "mistral-7b": "google/gemini-3-flash-preview",
+    "codellama-7b": "anthropic/claude-opus-4.6"
+  }
+}

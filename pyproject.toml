@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "twinrouterbench"
+version = "0.1.0"
+description = "Twin Router Bench: unified static and dynamic per-step router benchmarks (one suite, one install path)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{ name = "Twin Router Bench contributors" }]
+keywords = ["llm", "router", "benchmark", "swe-bench", "routing"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+  "requests>=2.28.0",
+  "tiktoken>=0.7.0",
+  "tokenizers>=0.19.0",
+]
+
+[project.optional-dependencies]
+dynamic = [
+  "mini-swe-agent>=2.2,<3",
+  "swebench>=2.1.0",
+  "docker>=7.0.0",
+  "litellm>=1.50.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/CommonstackAI/TwinRouterBench"
+Repository = "https://github.com/CommonstackAI/TwinRouterBench"
+
+[project.scripts]
+twinrouterbench = "twinrouterbench.cli:main"
+CommonRouterBench = "main.cli:main"
+miniswerouterbench = "miniswerouter.cli:main"
+swerouterbench = "swerouter.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["main*", "miniswerouter*", "swerouter*", "twinrouterbench*"]
+
+[tool.setuptools]
+include-package-data = true
+license-files = ["LICENSE"]
+
+[tool.setuptools.package-data]
+main = [
+  "../data/static/manifest.json",
+  "../data/static/question_bank.jsonl",
+  "tokenizer_data/*.json",
+]
+swerouter = ["../data/dynamic/*.json", "docs/*.md"]

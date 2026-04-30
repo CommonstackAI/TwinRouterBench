@@ -1,0 +1,215 @@
+"""Prompt templates used by :class:`MiniRouterAgent`.
+
+The strings below are taken verbatim (2026-04 snapshot) from
+mini-swe-agent's official benchmark config
+``minisweagent/config/benchmarks/swebench.yaml``. Keeping the templates
+aligned with upstream is important: the whole point of MiniSWERouterBench
+is that routed runs can be directly compared against the plain
+mini-swe-agent SWE-bench baseline, which is only meaningful when the
+agent sees the same system / instance / observation text.
+
+If mini-swe-agent updates these templates, we refresh this module and
+bump :data:`MINI_SWEBENCH_TEMPLATE_REVISION` in the same commit.
+
+Upstream source:
+https://github.com/SWE-agent/mini-swe-agent/blob/main/src/minisweagent/config/benchmarks/swebench.yaml
+"""
+
+MINI_SWEBENCH_TEMPLATE_REVISION = "2026-04-18 snapshot of swebench.yaml"
+
+
+SYSTEM_TEMPLATE = (
+    "You are a helpful assistant that can interact with a computer shell to "
+    "solve programming tasks."
+)
+
+
+INSTANCE_TEMPLATE = """<pr_description>
+Consider the following PR description:
+{{task}}
+</pr_description>
+
+
+<instructions>
+# Task Instructions
+
+## Overview
+
+You're a software engineer interacting continuously with a computer by submitting commands.
+You'll be helping implement necessary changes to meet requirements in the PR description.
+Your task is specifically to make changes to non-test files in the current directory in order to fix the issue described in the PR description in a way that is general and consistent with the codebase.
+This is an interactive process where you will think and issue AT LEAST ONE command, see the result, then think and issue your next command(s). 
+
+For each response:
+
+1. Include a THOUGHT section explaining your reasoning and what you're trying to accomplish
+2. Provide one or more bash tool calls to execute
+
+## Important Boundaries
+
+- MODIFY: Regular source code files in /testbed (this is the working directory for all your subsequent commands)
+- DO NOT MODIFY: Tests, configuration files (pyproject.toml, setup.cfg, etc.)
+
+## Recommended Workflow
+
+1. Analyze the codebase by finding and reading relevant files
+2. Create a script to reproduce the issue
+3. Edit the source code to resolve the issue
+4. Verify your fix works by running your script again
+5. Test edge cases to ensure your fix is robust
+
+## Command Execution Rules
+
+You are operating in an environment where
+
+1. You issue at least one command
+2. The system executes the command(s) in a subshell
+3. You see the result(s)
+4. You write your next command(s)
+
+Each response should include:
+
+1. **Reasoning text** where you explain your analysis and plan
+2. At least one tool call with your command
+
+**CRITICAL REQUIREMENTS:**
+
+- Your response SHOULD include reasoning text explaining what you're doing
+- Your response MUST include AT LEAST ONE bash tool call. You can make MULTIPLE tool calls in a single response when the commands are independent (e.g., searching multiple files, reading different parts of the codebase).
+- Directory or environment variable changes are not persistent. Every action is executed in a new subshell.
+- However, you can prefix any action with `MY_ENV_VAR=MY_VALUE cd /path/to/working/dir && ...` or write/load environment variables from files
+
+Example of a CORRECT response:
+<example_response>
+I need to understand the Builder-related code. Let me find relevant files and check the project structure.
+
+[Makes multiple bash tool calls: {"command": "ls -la"}, {"command": "find src -name '*.java' | grep -i builder"}, {"command": "cat README.md | head -50"}]
+</example_response>
+
+## Environment Details
+
+- You have a full Linux shell environment
+- Always use non-interactive flags (-y, -f) for commands
+- Avoid interactive tools like vi, nano, or any that require user input
+- You can use bash commands or invoke any tool that is available in the environment
+- You can also create new tools or scripts to help you with the task
+- If a tool isn't available, you can also install it
+
+## Submission
+
+When you've completed your work, you MUST submit your changes as a git patch.
+Follow these steps IN ORDER, with SEPARATE commands:
+
+Step 1: Create the patch file
+Run `git diff -- path/to/file1 path/to/file2 > patch.txt` listing only the source files you modified.
+Do NOT commit your changes.
+
+<patch_contents>
+The patch must only contain changes to the specific source files you modified to fix the issue.
+Do not submit file creations or changes to any of the following files:
+
+- test and reproduction files
+- helper scripts, tests, or tools that you created
+- installation, build, packaging, configuration, or setup scripts unless they are directly part of the issue you were fixing (you can assume that the environment is already set up for your client)
+- binary or compiled files
+</patch_contents>
+
+Step 2: Verify your patch
+Inspect patch.txt to confirm it only contains your intended changes and headers show `--- a/` and `+++ b/` paths.
+
+Step 3: Submit (EXACT command required)
+You MUST use this EXACT command to submit:
+
+   ```bash
+   echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT && cat patch.txt
+   ```
+
+If the command fails (nonzero exit status), it will not submit.
+
+<submission_rules>
+- Creating/viewing the patch and submitting it MUST be separate commands (not combined with &&).
+- If you modify patch.txt after verifying, you SHOULD verify again before submitting.
+- You CANNOT continue working (reading, editing, testing) in any way on this task after submitting.
+</submission_rules>
+</instructions>
+"""
+
+
+OBSERVATION_TEMPLATE = (
+    "{% if output.exception_info -%}\n"
+    "<exception_info>\n{{output.exception_info}}\n</exception_info>\n"
+    "{% endif -%}\n"
+    "<returncode>{{output.returncode}}</returncode>\n"
+    "{% if output.output | length < 10000 -%}\n"
+    "<output>\n{{ output.output -}}\n</output>\n"
+    "{%- else -%}\n"
+    "<warning>\n"
+    "The output of your last command was too long.\n"
+    "Please try a different command that produces less output.\n"
+    "If you're looking at a file you can try use head, tail or sed to view a smaller number of lines selectively.\n"
+    "If you're using grep or find and it produced too much output, you can use a more selective search pattern.\n"
+    "If you really need to see something from the full command's output, you can redirect output to a file and then search in that file.\n"
+    "</warning>\n"
+    "{%- set elided_chars = output.output | length - 10000 -%}\n"
+    "<output_head>\n{{ output.output[:5000] }}\n</output_head>\n"
+    "<elided_chars>\n{{ elided_chars }} characters elided\n</elided_chars>\n"
+    "<output_tail>\n{{ output.output[-5000:] }}\n</output_tail>\n"
+    "{%- endif -%}\n"
+)
+
+
+FORMAT_ERROR_TEMPLATE = """Tool call error:
+
+<error>
+{{error}}
+</error>
+
+Here is general guidance on how to submit correct toolcalls:
+
+Every response needs to use the 'bash' tool at least once to execute commands.
+
+Call the bash tool with your command as the argument:
+- Tool: bash
+- Arguments: {"command": "your_command_here"}
+
+If you have completed your assignment, please consult the first message about how to
+submit your solution (you will not be able to continue working on this task after that).
+"""
+
+
+# Environment defaults taken from mini's swebench.yaml `environment` section.
+# These override SwebenchContainerEnvConfig's own defaults when we run under
+# mini's SWE-bench protocol.
+MINI_SWEBENCH_ENV_DEFAULTS = {
+    "cwd": "/testbed",
+    "timeout": 60,
+    "interpreter": ["bash", "-c"],
+    "env": {
+        "PAGER": "cat",
+        "MANPAGER": "cat",
+        "LESS": "-R",
+        "PIP_PROGRESS_BAR": "off",
+        "TQDM_DISABLE": "1",
+    },
+}
+
+
+# Model kwargs mini sets by default for SWE-bench runs. We intentionally do
+# NOT force a specific temperature / drop_params across our pool (they're
+# per-model concerns); this dict is exposed for reference only.
+MINI_SWEBENCH_MODEL_KWARGS_REFERENCE = {
+    "drop_params": True,
+    "temperature": 0.0,
+    "parallel_tool_calls": True,
+}
+
+
+__all__ = [
+    "FORMAT_ERROR_TEMPLATE",
+    "INSTANCE_TEMPLATE",
+    "MINI_SWEBENCH_ENV_DEFAULTS",
+    "MINI_SWEBENCH_MODEL_KWARGS_REFERENCE",
+    "MINI_SWEBENCH_TEMPLATE_REVISION",
+    "OBSERVATION_TEMPLATE",
+    "SYSTEM_TEMPLATE",
+]
