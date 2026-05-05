@@ -1,7 +1,7 @@
 """Render a Markdown leaderboard from one or more score files produced by
 :func:`swerouter.leaderboard.score.score_run_dir`.
 
-The primary sort key is ``total_actual_bill_usd`` (ascending: less money =
+The primary sort key is ``total_leaderboard_bill_usd`` (ascending: less money =
 better rank). Auxiliary columns are printed for human readability; they do not
 influence the rank. Score files with mismatched ``pricing_fingerprint`` are
 rendered as separate tables to avoid hidden apples-vs-oranges comparisons
@@ -25,6 +25,14 @@ def _fmt_pct(x: float) -> str:
     return f"{x * 100:.2f}%"
 
 
+def _leaderboard_bill_usd(row: dict) -> float:
+    """Penalty-inclusive leaderboard total (USD). Supports legacy ``score.json``."""
+
+    if "total_leaderboard_bill_usd" in row:
+        return float(row["total_leaderboard_bill_usd"])
+    return float(row.get("total_actual_bill_usd", float("inf")))
+
+
 def _load_scores(score_files: Iterable[Path]) -> list[dict]:
     entries: list[dict] = []
     for p in score_files:
@@ -45,12 +53,12 @@ def _group_by_pricing(entries: list[dict]) -> dict[str, list[dict]]:
 
 
 def _render_one_table(group_label: str, rows: list[dict]) -> str:
-    sorted_rows = sorted(rows, key=lambda e: float(e.get("total_actual_bill_usd", float("inf"))))
+    sorted_rows = sorted(rows, key=_leaderboard_bill_usd)
     out: list[str] = []
     out.append(f"### {group_label}")
     out.append("")
     out.append(
-        "| Rank | Router | total_actual_bill_usd (sort) | resolved_rate | resolved | "
+        "| Rank | Router | total_leaderboard_bill_usd (sort) | resolved_rate | resolved | "
         "total_router_cost_usd | total_penalty_cost_usd | avg_steps | avg_cost_per_resolved_usd | instances |"
     )
     out.append(
@@ -62,7 +70,7 @@ def _render_one_table(group_label: str, rows: list[dict]) -> str:
             "{router_cost} | {penalty} | {avg_steps:.2f} | {avg_cpr} | {instances} |".format(
                 rank=i,
                 label=e.get("router_label", "?"),
-                total_bill=_fmt_usd(float(e.get("total_actual_bill_usd", 0.0))),
+                total_bill=_fmt_usd(_leaderboard_bill_usd(e)),
                 resolved_rate=_fmt_pct(float(e.get("resolved_rate", 0.0))),
                 resolved=int(e.get("resolved_count", 0)),
                 instances=int(e.get("instance_count", 0)),
@@ -85,10 +93,10 @@ def render_leaderboard(score_files: Iterable[Path | str]) -> str:
 
     buckets = _group_by_pricing(entries)
     sections: list[str] = []
-    sections.append("# Twin Router Bench Leaderboard")
+    sections.append("# TwinRouterBench Leaderboard")
     sections.append("")
     sections.append(
-        "Primary sort key: `total_actual_bill_usd` ascending (lower USD = better). "
+        "Primary sort key: `total_leaderboard_bill_usd` ascending (lower USD = better). "
         "Auxiliary columns are informational only and do not influence rank. "
         "See `docs/scoring_zh.md` for the full formula."
     )

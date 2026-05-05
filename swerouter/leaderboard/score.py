@@ -7,7 +7,11 @@ applies the formulas documented in ``docs/scoring_zh.md``.
 Outputs
 -------
 
-* ``total_actual_bill_usd`` — sole leaderboard sort key (lower is better).
+* ``total_leaderboard_bill_usd`` — sole leaderboard sort key (lower is better).
+  This is **not** raw API spend: it sums per-instance bills that add a
+  high-baseline rerun estimate on **unresolved** instances (see
+  ``docs/scoring_zh.md``). For realized routed spend only, use
+  ``total_router_cost_usd``.
 * Auxiliary columns (``total_router_cost_usd``, ``total_penalty_cost_usd``,
   ``resolved_count``, ``resolved_rate``, ``avg_steps``,
   ``avg_cost_per_resolved``) for human readability.
@@ -300,7 +304,7 @@ def score_run_dir(
         "ttl_policy_name": ttl.policy_name,
         "pricing_fingerprint": pricing_fp,
         "high_baseline_model_id": high_model_id,
-        "total_actual_bill_usd": total_bill,
+        "total_leaderboard_bill_usd": total_bill,
         "total_router_cost_usd": total_router_cost,
         "total_penalty_cost_usd": total_penalty,
         "resolved_count": resolved_count,

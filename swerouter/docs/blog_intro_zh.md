@@ -12,7 +12,7 @@
 
 SWERouterBench 端到端跑完 SWE-bench Verified 的 500 个实例。每一次 LLM 调用，harness 都把控制权交给 router；router 从**官方锁定的模型池**里挑一个具体 `model_id`；harness 调对应厂商、记录 usage、按 5 分钟 wall-clock prompt cache 模拟、每步写 trace。
 
-跑完一个实例后，我们用 **SWE-bench 官方判据**（`FAIL_TO_PASS` 全过 + `PASS_TO_PASS` 不退化——和 SWE-bench Verified 公开 leaderboard 同一把尺子）判断最终 patch 是否 `resolved`。然后把每个 token 按对应厂商的**真实公开价**算账，加起来。这一个数——`total_actual_bill_usd`——就是 leaderboard。
+跑完一个实例后，我们用 **SWE-bench 官方判据**（`FAIL_TO_PASS` 全过 + `PASS_TO_PASS` 不退化——和 SWE-bench Verified 公开 leaderboard 同一把尺子）判断最终 patch 是否 `resolved`。再按公开价把各步 token 折成美元，并按「失败则加 1× high 基线重跑估计」的规则汇总成**排行榜总账单** `total_leaderboard_bill_usd`（不是单纯的实际 API 花销；后者见 `total_router_cost_usd`）。
 
 没有 combined score，没有任何合成质量指标。**美金越少，排名越前。**
 
@@ -30,7 +30,7 @@ failed_instance_bill = Σ router_actual_cost_i  +  Σ baseline_high_cost_i
 
 `baseline_high_cost_i` 的算法：用 router 真实 run 的每步 prefix / output token 数，对"全程用最贵模型"这个反事实做**独立的单模型 cache 续写模拟**（5 分钟 TTL），再按那个模型的公开价算。这是"假如你不 route、直接上 HIGH 会花多少"的一阶估计，作为失败情况下的自然账单惩罚。
 
-排名键：`total_actual_bill_usd` 升序。一个每题都选最便宜的 router，绝大多数实例会失败，被 1× baseline 惩罚打回到"≈ 全程 HIGH"的账单量级，因此无法靠"纯省钱"刷榜。
+排名键：`total_leaderboard_bill_usd` 升序。一个每题都选最便宜的 router，绝大多数实例会失败，被 1× baseline 惩罚打回到"≈ 全程 HIGH"的账单量级，因此无法靠"纯省钱"刷榜。
 
 ## 它不是什么
 
@@ -47,7 +47,7 @@ failed_instance_bill = Σ router_actual_cost_i  +  Σ baseline_high_cost_i
 | 通过判据 | `pred_tier >= gold_tier`（软代理） | SWE-bench `resolved`（真跑测试） |
 | 定价 | 档位名义价 | 各厂商公开真实价 |
 | Cache 模型 | 步距 TTL=3 | Wall-clock TTL=300s |
-| 头条指标 | `scores_v2.combined_score`（4 维平均） | `total_actual_bill_usd`（单一美金） |
+| 头条指标 | `scores_v2.combined_score`（4 维平均） | `total_leaderboard_bill_usd`（惩罚计入后的总账单，USD） |
 | 重依赖 | 无 | `swebench` + `docker` |
 | PyPI | `CommonRouterBench` | `SWERouterBench`（依赖 `CommonRouterBench`） |
 

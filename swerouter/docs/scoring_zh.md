@@ -5,8 +5,10 @@
 ## 1. 单一指标
 
 ```
-leaderboard 主排序键 = total_actual_bill_usd  （越低越好）
+leaderboard 主排序键 = total_leaderboard_bill_usd  （越低越好）
 ```
+
+字段名 **`total_leaderboard_bill_usd`**（JSON / `score.json`）表示「用于排名的**总账单**」：在 **resolved** 时等于真实路由 API 支出之和；在失败实例上会**加上** 1× high-baseline 重跑估计。它**不是**「实际花销」的同义词——纯路由真实支出请看 **`total_router_cost_usd`**。旧版曾误用 `total_actual_bill_usd`，易与「实际 API 账单」混淆；`swerouter/leaderboard/render.py` 仍可读该旧键以兼容历史 `score.json`。
 
 **不做 combined_score**（不像 CRB v2 那种 4 项平均）。理由：SWE-bench 的 `resolved` 已经是硬金标，router 不能靠"错得便宜"作弊——失败 instance 直接触发 1× baseline 惩罚，所以"一个 router 如果便宜但失败多"会被自动拖到榜尾。单一美元指标工业可读性最高。
 
@@ -38,8 +40,8 @@ if instance.resolved == False:
 ### 2.2 汇总
 
 ```
-total_actual_bill_usd  = Σ_instance instance_bill
-total_router_cost_usd  = Σ_instance Σ_i router_actual_cost_i        # 辅助列
+total_leaderboard_bill_usd  = Σ_instance instance_bill
+total_router_cost_usd  = Σ_instance Σ_i router_actual_cost_i        # 辅助列：真实路由 API 支出
 total_penalty_cost_usd = Σ_instance (1-resolved) × Σ_i baseline_high_cost_i  # 辅助列
 ```
 

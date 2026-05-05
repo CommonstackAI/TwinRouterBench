@@ -1,9 +1,9 @@
-"""Twin Router Bench — dynamic track (editor scaffold) command-line entrypoint.
+"""TwinRouterBench — dynamic track (editor scaffold) command-line entrypoint.
 
 Subcommands:
 
 * ``run``         -- run a router on SWE-bench Verified and write a run summary.
-* ``score``       -- score an existing run directory (``total_actual_bill_usd``).
+* ``score``       -- score an existing run directory (``total_leaderboard_bill_usd``).
 * ``audit-infra`` -- scan ``results/*.json`` for fair-metrics infra / harness exclusions.
 * ``audit-trace-cost`` -- sum ``step_cost_usd`` vs ``raw_usage.cost`` from ``*.trace.jsonl``.
 * ``render``      -- render a markdown leaderboard from one or more score files.
@@ -251,9 +251,16 @@ def _cmd_score(args: argparse.Namespace) -> int:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as fh:
         json.dump(score, fh, indent=2)
+    leaderboard_bill = score.get("total_leaderboard_bill_usd")
+    if leaderboard_bill is None:
+        leaderboard_bill = score.get("total_actual_bill_usd")
+    if leaderboard_bill is None:
+        raise KeyError(
+            "score dict missing total_leaderboard_bill_usd (and no legacy total_actual_bill_usd)"
+        )
     summary = {
         "router_label": score["router_label"],
-        "total_actual_bill_usd": score["total_actual_bill_usd"],
+        "total_leaderboard_bill_usd": leaderboard_bill,
         "resolved_count": score["resolved_count"],
         "resolved_rate": score["resolved_rate"],
         "instances": score["instance_count"],

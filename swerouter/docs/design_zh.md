@@ -13,7 +13,7 @@ SWERouterBench 是 CommonRouterBench 的**动态姊妹包**。同一个 monorepo
 | 定价 | `main.pricing` 档位名义价 | `data/model_pricing.json` 厂商真实价 |
 | Cache 建模 | 步距 TTL=3，`main.tokenizer` 估算 token | Wall-clock TTL=300s，API 实 usage 四桶归一 |
 | Pass 判据 | `pred_tier_id >= gold_tier_id` | SWE-bench 官方 `resolved`（FAIL_TO_PASS + PASS_TO_PASS） |
-| 打分 | `scores_v2.combined_score`（4 项平均） | **单一指标** `total_actual_bill_usd`（越低越好） |
+| 打分 | `scores_v2.combined_score`（4 项平均） | **单一指标** `total_leaderboard_bill_usd`（越低越好） |
 | 重依赖 | `requests + tiktoken + tokenizers` | 上面 + `swebench + docker` |
 | 发布包 | PyPI `CommonRouterBench`，import `main` | PyPI `SWERouterBench`，import `swerouter` |
 
@@ -57,7 +57,7 @@ flowchart TB
     baseSum --> bill
     bill -->|true| passBill[actual only]
     bill -->|false| failBill["actual + 1 × baseline"]
-    passBill --> total[total_actual_bill_usd]
+    passBill --> total[total_leaderboard_bill_usd]
     failBill --> total
   end
   loop --> traceFiles

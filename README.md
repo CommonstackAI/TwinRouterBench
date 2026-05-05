@@ -246,6 +246,11 @@ twinrouterbench dynamic render --score runs/a/score.json runs/b/score.json --out
 
 `score` writes `score.json` (or `--out`) using the same scorer as the editor harness.
 
+**Dynamic aggregates (naming):**
+
+- After `run`, `eval_summary.json` includes **`resolved_rate`** (same predicate as SWE-bench `resolved`) and **`total_router_cost_usd`** — sum of **real routed API spend only** (no failure penalty).
+- After `score`, `score.json` adds the leaderboard fields documented in [`swerouter/docs/scoring_zh.md`](swerouter/docs/scoring_zh.md). The primary sort key is **`total_leaderboard_bill_usd`**: per-instance bill equals routed spend when the instance resolves, and adds a **1× high-baseline rerun estimate** when it does not — so this value is **not** interchangeable with “actual spend”. Raw spend and penalties are also reported as **`total_router_cost_usd`** and **`total_penalty_cost_usd`**. Older `score.json` files may still contain the deprecated key `total_actual_bill_usd`; `twinrouterbench dynamic render` accepts both.
+
 ---
 
 ## Editor scaffold (`twinrouterbench swe …`)
@@ -293,7 +298,7 @@ Under `TwinRouterBench/scripts/examples/`:
 
 ## Citation
 
-If you use Twin Router Bench in research, cite the **Twin Router Bench** paper (placeholder—update when DOI is available).
+If you use TwinRouterBench in research, cite the **TwinRouterBench** paper (placeholder—update when DOI is available).
 
 ---
 
@@ -312,4 +317,4 @@ If you use Twin Router Bench in research, cite the **Twin Router Bench** paper (
 
 ## Appendix: migration
 
-This tree supersedes separate installs of the historical static and dynamic router benchmark packages for **development inside this monorepo**. Use **Twin Router Bench** naming in new scripts and papers; keep legacy pathnames only where required for one-off comparison.
+This tree supersedes separate installs of the historical static and dynamic router benchmark packages for **development inside this monorepo**. Use **TwinRouterBench** naming in new scripts and papers; keep legacy pathnames only where required for one-off comparison.

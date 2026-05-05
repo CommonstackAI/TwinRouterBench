@@ -12,7 +12,7 @@
 
 SWERouterBench runs the 500 SWE-bench Verified instances end-to-end. At every LLM call the harness hands control to your router; your router picks a concrete `model_id` from an officially locked pool; the harness invokes the chosen vendor, tracks usage, simulates a 5-minute wall-clock prompt cache, and writes a per-step trace.
 
-At the end of the run we ask SWE-bench's own judge whether the final patch resolves the instance (`FAIL_TO_PASS` plus `PASS_TO_PASS` — the same gate the public SWE-bench Verified leaderboard uses). Then we price every token at its vendor's published real rate and add up the bill. That one number — `total_actual_bill_usd` — is the leaderboard.
+At the end of the run we ask SWE-bench's own judge whether the final patch resolves the instance (`FAIL_TO_PASS` plus `PASS_TO_PASS` — the same gate the public SWE-bench Verified leaderboard uses). We then convert each step's tokens to USD at published rates and aggregate into a **penalty-inclusive leaderboard bill**, `total_leaderboard_bill_usd` (this is not the same as raw routed API spend; see `total_router_cost_usd`).
 
 No combined score. No synthetic quality metric. Lower dollar amount wins.
 
@@ -31,7 +31,7 @@ failed_instance_bill = Σ router_actual_cost_i  +  Σ baseline_high_cost_i
 
 `baseline_high_cost_i` is computed by taking the per-step prefix and output token counts the router actually produced, independently simulating a perfect single-model cache chain for the highest-tier model in the pool (5-minute TTL), and pricing the result at that model's published rates. It is a best-effort first-order estimate of "how much would an always-the-strongest baseline have cost on the same trajectory" — the natural billing penalty for a failed run.
 
-Leaderboard sort: `total_actual_bill_usd` ascending. A router that fails every instance ends up paying roughly the always-HIGH baseline anyway (the penalty), so pure "pick the cheapest" strategies cannot cheese the ranking.
+Leaderboard sort: `total_leaderboard_bill_usd` ascending. A router that fails every instance ends up paying roughly the always-HIGH baseline anyway (the penalty), so pure "pick the cheapest" strategies cannot cheese the ranking.
 
 ## What it is not
 
@@ -50,7 +50,7 @@ SWERouterBench is not a training-data dump. Traces are per-run artifacts and are
 | Pass criterion | `pred_tier >= gold_tier` (proxy) | SWE-bench `resolved` (real tests) |
 | Pricing | nominal tier prices | published provider prices |
 | Cache model | step-distance TTL = 3 | wall-clock TTL = 300s |
-| Top-line metric | `scores_v2.combined_score` (4-dim average) | `total_actual_bill_usd` (single dollar figure) |
+| Top-line metric | `scores_v2.combined_score` (4-dim average) | `total_leaderboard_bill_usd` (penalty-inclusive total bill, USD) |
 | Deps | lightweight | `swebench`, `docker` |
 | PyPI | `CommonRouterBench` | `SWERouterBench` (depends on `CommonRouterBench`) |
 
