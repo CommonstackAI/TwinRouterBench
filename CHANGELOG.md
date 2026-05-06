@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to **Twin Router Bench** are documented in this file.
+All notable changes to **TwinRouterBench** are documented in this file.
 
 ## [0.1.0] - 2026-04-30
 

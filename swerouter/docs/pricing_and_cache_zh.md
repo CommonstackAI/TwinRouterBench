@@ -31,7 +31,7 @@
 |---|---|
 | `model_id` | API 侧发给 `base_url/v1/chat/completions` 的 model 名，必须和 `model_pricing.json` 里的 key 一一对应 |
 | `provider` | `anthropic` / `openai` / `deepseek` / `gemini` / `openai_compat`（走 OpenRouter 等聚合） |
-| `is_high_baseline` | 布尔，必须且**仅有一个** model 被标 `true`，作为失败 instance 的 1× baseline 重跑模型（见 `docs/scoring_zh.md`） |
+| `is_high_baseline` | 布尔，必须且**仅有一个** model 被标 `true`，标记池内「最贵 / 全 Opus」参考模型（报告、基线对照）；**排行榜失败惩罚**为 `leaderboard_penalty.json` 中的固定美元项，见 `docs/scoring_zh.md` |
 
 ### 1.2 `data/model_pricing.json`
 
@@ -120,15 +120,9 @@ Agent loop 在真调 LLM 前，先用 `PromptCacheModel.lookup(model_id, message
 3. Wall-clock TTL：`now_ts - last_call_ts <= wallclock_ttl_sec`。
 4. 任何一条不满足 → miss，整段 prompt 视为 cache_write。
 
-## 4. Baseline 账单的 Cache 独立重模拟
+## 4. 与排行榜账单的关系
 
-这是 `docs/scoring_zh.md` 里失败实例账单的核心子流程，本文档只指出**字段来源**：
-
-- `prefix_tokens_i`、`output_tokens_i`：从 `trace.jsonl` 每步的 `usage.input + usage.cache_read + usage.cache_write` 与 `usage.output` 读出。
-- `wallclock_ts_i`：从 `trace.jsonl` 每步的 `started_at` 读出。
-- HIGH 模型的 4 桶价：从 `data/model_pricing.json` 的 `is_high_baseline=true` 那一项读出。
-
-重模拟公式见 `docs/scoring_zh.md` §2。
+**`total_leaderboard_bill_usd` 不再**对失败实例做「按真实步数用 HIGH 模型 + 独立 cache 重模拟」的反事实重算；失败条仅加固定 `C_usd`（见 `docs/scoring_zh.md`）。本文档的 cache / 4 桶价仍用于 **trace 上真实 router 调用**的计费与诊断。
 
 ## 5. Pricing schema 版本治理
 

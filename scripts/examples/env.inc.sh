@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Load API credentials for Twin Router Bench example wrappers (dynamic track).
+# Load API credentials for TwinRouterBench example wrappers (dynamic track).
 #
 # Layout:
 #   <monorepo>/TwinRouterBench/scripts/examples/env.inc.sh

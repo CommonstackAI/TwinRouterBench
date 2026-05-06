@@ -5,8 +5,8 @@ gold tier labels from ``data/static/question_bank.jsonl``, then map tier -> conc
 Use-cases:
 
 * Smoke test the dynamic pipeline with a deterministic router.
-* Validate that the per-step scoring (actual cost + failed-run penalty) is
-  computed correctly.
+* Validate that the per-step scoring (actual routed cost + flat unresolved
+  add-on in ``score.py``) is computed correctly.
 
 Behaviour:
 

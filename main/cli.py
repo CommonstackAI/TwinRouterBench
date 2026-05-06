@@ -13,7 +13,7 @@ from main.metrics import aggregate_routerbench_metrics, case_metrics_from_dict
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog="twinrouterbench static",
-        description="Twin Router Bench — static track utilities",
+        description="TwinRouterBench — static track utilities",
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
