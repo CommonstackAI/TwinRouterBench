@@ -1,22 +1,31 @@
 """Score a completed run directory with the single-metric leaderboard rule.
 
 The scorer is pure offline: it reads ``results/<instance>.json`` and the
-per-instance ``*.trace.jsonl`` files produced by :mod:`swerouter.harness` and
+per-instance ``*.trace.jsonl`` files produced by :mod:`swerouter.harness`` and
 applies the formulas documented in ``docs/scoring_zh.md``.
+
+Penalty rule (v2 — fixed opportunity-cost add-on)
+-------------------------------------------------
+* **Resolved** instance: ``instance_bill = router_actual_cost``.
+* **Unresolved** instance: ``instance_bill = router_actual_cost + FAILURE_PENALTY_USD``.
+
+``FAILURE_PENALTY_USD`` is a fixed constant (default \$0.55) representing the
+empirical average cost of running the all-Opus baseline on the evaluation set.
+This decouples the penalty from step count and pricing tables, avoids
+"long trace → exploding penalty" artifacts, and keeps the leaderboard formula
+trivial to describe.
 
 Outputs
 -------
 
 * ``total_leaderboard_bill_usd`` — sole leaderboard sort key (lower is better).
-  This is **not** raw API spend: it sums per-instance bills that add a
-  high-baseline rerun estimate on **unresolved** instances (see
-  ``docs/scoring_zh.md``). For realized routed spend only, use
+  Equals ``Σ router_actual + 0.55 × #unresolved``.
+  This is **not** raw API spend; for realized routed spend only use
   ``total_router_cost_usd``.
 * Auxiliary columns (``total_router_cost_usd``, ``total_penalty_cost_usd``,
   ``resolved_count``, ``resolved_rate``, ``avg_steps``,
   ``avg_cost_per_resolved``) for human readability.
-* ``per_instance`` breakdown so human auditors can see where every dollar
-  went and validate the baseline re-simulation step by step.
+* ``per_instance`` breakdown so human auditors can see where every dollar went.
 """
 
 from __future__ import annotations
@@ -26,16 +35,23 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from swerouter.agent.loop import ModelPoolEntry, load_model_pool
-from swerouter.cache import TTLPolicy, simulate_baseline_cache_sequence
 from swerouter.infra_errors import is_excluded_from_fair_metrics
-from swerouter.pricing import ModelPricing, PricingTable, load_pricing_table, step_real_cost_usd
-from swerouter.usage import UsageBuckets, normalize_usage
+from swerouter.pricing import PricingTable, load_pricing_table, step_real_cost_usd
+from swerouter.usage import normalize_usage
+
+FAILURE_PENALTY_USD: float = 0.55
+"""Fixed per-instance penalty added to unresolved cases.
+
+This is the empirical average cost of running the all-Opus baseline on the
+evaluation set, used as a fixed opportunity-cost proxy.  It intentionally
+does NOT scale with step count or token volume so that "long failing traces"
+do not cause explosive penalties.
+"""
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 _LOCKED_DATA = REPO_ROOT / "data" / "dynamic"
 DEFAULT_POOL = _LOCKED_DATA / "model_pool.json"
 DEFAULT_PRICING = _LOCKED_DATA / "model_pricing.json"
-DEFAULT_TTL = _LOCKED_DATA / "ttl_policy.json"
 
 
 def _iter_trace_steps(trace_path: Path) -> list[dict]:
@@ -120,34 +136,6 @@ def _repriced_router_and_series(
     return router_actual, prefix, output, ts
 
 
-def _baseline_high_cost_for_instance(
-    prefix: list[int],
-    output: list[int],
-    timestamps: list[float],
-    *,
-    high_pricing: ModelPricing,
-    ttl: TTLPolicy,
-) -> float:
-    """Independent cache re-simulation priced at HIGH (see ``docs/scoring_zh.md`` §4)."""
-    decisions = simulate_baseline_cache_sequence(
-        prefix_tokens_by_step=prefix,
-        wallclock_ts_by_step=timestamps,
-        ttl=ttl,
-    )
-    total = 0.0
-    for i, d in enumerate(decisions):
-        usage = UsageBuckets(
-            input_tokens=0,
-            cache_read_tokens=d.cache_read_tokens,
-            cache_write_tokens=d.cache_write_tokens,
-            output_tokens=output[i],
-        )
-        total += (
-            usage.cache_read_tokens * high_pricing.cache_read_per_m
-            + usage.cache_write_tokens * high_pricing.cache_write_per_m
-            + usage.output_tokens * high_pricing.output_per_m
-        ) / 1_000_000.0
-    return total
 
 
 def _load_result_file(path: Path) -> dict:
@@ -174,9 +162,12 @@ def score_run_dir(
         ``results/<instance_id>.json`` files and the ``*.trace.jsonl`` files.
     router_label
         Human-readable router label written into the score report.
-    pricing_path / ttl_path / pool_path
+    pricing_path / pool_path
         Optional overrides; defaults to ``data/dynamic/*.json`` under TwinRouterBench
         repo root.
+    ttl_path
+        Retained for CLI compatibility but **no longer used** by the scorer
+        (the fixed-penalty rule does not simulate baseline cache sequences).
     exclude_infra_failures
         When True, instances whose ``agent_error`` or ``eval_error`` matches
         :func:`swerouter.infra_errors.is_transport_or_infra_failure` are omitted
@@ -187,8 +178,7 @@ def score_run_dir(
     reprice_from_raw_usage
         When True, recompute each step's router USD from ``raw_usage`` in the
         trace using the current ``normalize_usage`` + ``model_pricing.json``
-        (fixes historical traces written under older usage mapping). Baseline
-        penalty simulation uses the repriced per-step token buckets. Raises if
+        (fixes historical traces written under older usage mapping). Raises if
         any step lacks ``raw_usage`` or ``model_id``.
     """
 
@@ -197,10 +187,8 @@ def score_run_dir(
         raise FileNotFoundError(f"run directory missing: {run_dir}")
 
     pricing = load_pricing_table(pricing_path or DEFAULT_PRICING)
-    ttl = TTLPolicy.load(ttl_path or DEFAULT_TTL)
     pool = load_model_pool(pool_path or DEFAULT_POOL)
     high_model_id = next(p.model_id for p in pool if p.is_high_baseline)
-    high_pricing = pricing.get(high_model_id)
     provider_by_model = _provider_by_model_id(pool)
 
     results_dir = run_dir / "results"
@@ -235,38 +223,26 @@ def score_run_dir(
 
         steps = _iter_trace_steps(trace_path)
         if reprice_from_raw_usage:
-            router_actual, prefix, output, timestamps = _repriced_router_and_series(
+            router_actual, _prefix, _output, _timestamps = _repriced_router_and_series(
                 steps,
                 provider_by_model=provider_by_model,
                 pricing=pricing,
             )
         else:
-            prefix, output, timestamps = _extract_step_series(steps)
             router_actual = sum(float(s.get("step_cost_usd", 0.0)) for s in steps)
-        baseline_cost = (
-            _baseline_high_cost_for_instance(
-                prefix,
-                output,
-                timestamps,
-                high_pricing=high_pricing,
-                ttl=ttl,
-            )
-            if prefix
-            else 0.0
-        )
+
         if resolved:
             instance_bill = router_actual
             penalty = 0.0
         else:
-            instance_bill = router_actual + baseline_cost
-            penalty = baseline_cost
+            penalty = FAILURE_PENALTY_USD
+            instance_bill = router_actual + penalty
 
         row = {
             "instance_id": instance_id,
             "resolved": resolved,
             "step_count": len(steps),
             "router_actual_cost_usd": router_actual,
-            "baseline_high_cost_usd": baseline_cost,
             "penalty_usd": penalty,
             "instance_bill_usd": instance_bill,
             "model_distribution": blob.get("model_distribution") or {},
@@ -294,16 +270,16 @@ def score_run_dir(
     )
 
     pool_fingerprint = "|".join(sorted(p.model_id for p in pool))
-    pricing_fp = f"{pricing.schema_version}.{pool_fingerprint}.{ttl.policy_name}"
+    pricing_fp = f"{pricing.schema_version}.{pool_fingerprint}"
 
     out: dict[str, Any] = {
         "router_label": router_label,
         "run_dir": str(run_dir),
         "pool_fingerprint": pool_fingerprint,
         "pricing_schema_version": pricing.schema_version,
-        "ttl_policy_name": ttl.policy_name,
         "pricing_fingerprint": pricing_fp,
         "high_baseline_model_id": high_model_id,
+        "failure_penalty_usd": FAILURE_PENALTY_USD,
         "total_leaderboard_bill_usd": total_bill,
         "total_router_cost_usd": total_router_cost,
         "total_penalty_cost_usd": total_penalty,
