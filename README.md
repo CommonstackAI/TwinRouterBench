@@ -143,6 +143,42 @@ Each element must at least include `case_id`, `task_passed`, and either nominal 
 
 **Question bank:** shipped under **`data/static/`** (`question_bank.jsonl`, `manifest.json`). The `main` package exposes `DATA_DIR` / `STATIC_DATA_DIR` / `QUESTION_BANK_PATH` pointing at that directory (see `main.dataset`). `setuptools` package-data includes those files for wheel installs. Tier-only eval APIs live under `main.eval`.
 
+### Static track — metric field names (outputs)
+
+**1) `twinrouterbench static metrics --cases …`** prints one JSON object from `main.metrics.aggregate_routerbench_metrics` (Section 11–style **task-level** savings on nominal tier rates):
+
+| Field | Meaning |
+|-------|---------|
+| `valid_cases` | Number of cases in the input array. |
+| `passed_cases` | Cases with `task_passed == true`. |
+| `pass_rate` | `passed_cases / valid_cases`. |
+| `cost_score_cases_used` | Passed cases with `save_gt > 0` included in the cost ratio. |
+| `sum_save_gt_usd` / `sum_save_test_usd` | Sums of per-case savings vs baseline / vs test (USD, passed + positive-save_gt subset). |
+| `cost_savings_score` | `100 * sum_save_test_usd / sum_save_gt_usd` on that subset (`NaN` if denominator is 0). |
+| `money_saved_test` | Per-case `baseline_nominal - test_nominal` stats over passed cases (`mean_per_case_over_passed`, `total_over_passed`). |
+| `pricing` / `cost_score_rule` | Fixed tier rates used and a short rule string (documentation only). |
+
+**2) Tier-supervision eval summary** (`main.eval.build_eval_summary` / `run_question_bank_eval`): one top-level JSON with routing rows and several metric blocks. Headline tier metrics most papers care about live under **`scores_v2`** (`main.eval.compute_v2_scores`):
+
+| Field (`scores_v2`) | Meaning |
+|---------------------|---------|
+| `case_pass_rate_percent` | Row fraction with `pred_tier_id >= gold_tier_id` (errors count as fail). |
+| `case_exact_match_percent` | Row fraction with `pred_tier_id == gold_tier_id`. |
+| `trajectory_pass_rate_percent` | Case-weighted share of rows whose **whole trajectory** passes (every step `pred >= gold`, no error). |
+| `cost_savings_score_percent` | Macro-averaged trajectory-level cost savings vs always-high baseline (see `scores_v2.note` in the JSON). |
+| `combined_score_percent` | Mean of the four percentages above (`NaN` if any component is `NaN`). |
+| `total_rows` / `error_rows` | Row counts; `case_pass_count` / `case_exact_count` are integer numerators. |
+
+Other useful keys on the same summary object:
+
+| Field | Meaning |
+|-------|---------|
+| `tier_match_accuracy` / `accuracy_excluding_errors` | Exact tier match rate on rows **without** API errors. |
+| `exact_match` | Integer count of exact matches (same scope as tier accuracy numerator). |
+| `api_errors` / `valid_response_rate` | Error count and `1 - api_errors/sampled`. |
+| `section_11` | Older single-step pass rate + `cost_savings_score` (uniform tokens); distinct from `scores_v2`. |
+| `router_accounting` | Trajectory-level **USD** accounting: `D_usd`, `N_usd`, `pass_rate_percent`, `exact_match_rate_percent`, `accounting_savings_score_percent`, `overall_score_percent` (mean of those three headline percents). |
+
 ---
 
 ## Dynamic track (`twinrouterbench dynamic …`)
@@ -178,6 +214,8 @@ Under `--output-dir`:
 - `eval_summary.json` — run-level aggregate (`completed`, `resolved_count`, `errors`, …).
 - `case_summaries/<instance_id>.summary.json` — condensed per-case view.
 - `agent_logs/<instance_id>/agent.log` — mini-swe-agent log.
+
+**`eval_summary.json` fields** (`miniswerouter.harness.run_eval.EvalSummary`; the `swe` harness uses the same keys via `swerouter.harness.run_eval`): `router_label`, `run_id`, `started_at`, `finished_at`, `dataset_name`, `dataset_split`, `pool_fingerprint`, `pricing_schema_version`, `ttl_policy_name` (may be empty when unused), `total_instances`, `completed`, `resolved_count`, **`resolved_rate`** (`resolved_count / completed`, same `resolved` predicate as SWE-bench), **`total_router_cost_usd`** (sum of realized routed API spend only; no failure penalty), `per_instance_paths`, `errors`.
 
 Long stretches without new console output are normal (Docker pull, repository setup, multi-step LLM calls).
 
@@ -246,10 +284,24 @@ twinrouterbench dynamic render --score runs/a/score.json runs/b/score.json --out
 
 `score` writes `score.json` (or `--out`) using the same scorer as the editor harness.
 
-**Dynamic aggregates (naming):**
+**`score.json` fields** (from `swerouter.leaderboard.score.score_run_dir`; full formulas in [`swerouter/docs/scoring_zh.md`](swerouter/docs/scoring_zh.md)):
 
-- After `run`, `eval_summary.json` includes **`resolved_rate`** (same predicate as SWE-bench `resolved`) and **`total_router_cost_usd`** — sum of **real routed API spend only** (no failure penalty).
-- After `score`, `score.json` adds the leaderboard fields documented in [`swerouter/docs/scoring_zh.md`](swerouter/docs/scoring_zh.md). The primary sort key is **`total_leaderboard_bill_usd`**: per-instance bill equals routed spend when the instance resolves, and adds a **1× high-baseline rerun estimate** when it does not — so this value is **not** interchangeable with “actual spend”. Raw spend and penalties are also reported as **`total_router_cost_usd`** and **`total_penalty_cost_usd`**. Older `score.json` files may still contain the deprecated key `total_actual_bill_usd`; `twinrouterbench dynamic render` accepts both.
+| Field | Meaning |
+|-------|---------|
+| `router_label` / `run_dir` | Router name and scored directory path. |
+| `pool_fingerprint` / `pricing_schema_version` / `pricing_fingerprint` | Locked pool + pricing identity used when repricing traces. |
+| `high_baseline_model_id` | Tier-high / Opus pool id (benchmark metadata). |
+| `failure_penalty_usd` | Fixed add-on per **unresolved** instance (default `0.55` USD). |
+| **`total_leaderboard_bill_usd`** | **Leaderboard sort key** (lower is better): Σ `instance_bill_usd` = routed spend + penalty on unresolved. |
+| **`total_router_cost_usd`** | Σ realized routed spend only (no penalty). |
+| **`total_penalty_cost_usd`** | Σ `penalty_usd` (unresolved instances only). |
+| `resolved_count` / `resolved_rate` / `instance_count` | Resolution stats (denominator respects `exclude_infra_failures` when set). |
+| `avg_steps` / `avg_cost_per_resolved_usd` | Mean steps over counted instances; `total_leaderboard_bill_usd / resolved_count` (or `inf` if none resolved). |
+| `per_instance` | List of rows: `instance_id`, `resolved`, `step_count`, **`router_actual_cost_usd`**, **`penalty_usd`**, **`instance_bill_usd`**, plus `model_distribution`, errors, `excluded_from_metrics`, etc. |
+| `exclude_infra_failures` / `raw_instance_count` / `infra_excluded_count` | Present when infra failures are excluded from aggregates. |
+| `reprice_from_raw_usage` | Present when costs were recomputed from trace usage + current pricing tables. |
+
+Older `score.json` files may still use the deprecated key `total_actual_bill_usd` (same role as `total_leaderboard_bill_usd`); `twinrouterbench dynamic render` accepts both.
 
 ---
 
