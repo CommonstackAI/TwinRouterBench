@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Best Routers by Resolve Rate | TwinRouterBench</title>
+    <meta
+      name="description"
+      content="Compare conditional per-call LLM routers on TwinRouterBench dynamic and static routing evaluations."
+    />
+    <meta property="og:title" content="TwinRouterBench Leaderboard" />
+    <meta
+      property="og:description"
+      content="Public leaderboard for conditional per-call LLM routing."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="notice" id="noticeBar"></div>
+
+    <header class="site-header">
+      <div class="header-main">
+        <a class="brand" href="./" aria-label="TwinRouterBench home">
+          <span class="brand-icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" role="img">
+              <path d="M6 9h9v5H6zM17 9h9v5h-9zM6 18h9v5H6zM17 18h9v5h-9z" />
+              <path d="M15 11.5h2M15 20.5h2M10.5 14v4M21.5 14v4" />
+            </svg>
+          </span>
+          <span>
+            <strong>TwinRouterBench</strong>
+            <small>LLM Router Leaderboard</small>
+          </span>
+        </a>
+
+        <label class="global-search">
+          <span class="search-icon" aria-hidden="true"></span>
+          <input id="routerSearch" type="search" placeholder="Search routers..." autocomplete="off" />
+        </label>
+
+        <nav class="top-links" aria-label="Project links" id="projectLinks"></nav>
+      </div>
+
+      <div class="metric-nav" aria-label="Metric views">
+        <div class="metric-tabs" id="metricTabs">
+          <button class="is-active" type="button" data-view="dynamic" data-sort="resolve" data-title="Best Routers by Resolve Rate" data-icon="trophy">
+            <span class="icon trophy" aria-hidden="true"></span>
+            <span>Success Rate</span>
+          </button>
+          <button type="button" data-view="dynamic" data-sort="cost" data-title="Lowest Cost Routers" data-icon="dollar">
+            <span class="icon dollar" aria-hidden="true"></span>
+            <span>Cost</span>
+          </button>
+          <button type="button" data-view="dynamic" data-sort="value" data-title="Best Value Routers" data-icon="gem">
+            <span class="icon gem" aria-hidden="true"></span>
+            <span>Value</span>
+          </button>
+          <button type="button" data-view="dynamic" data-sort="steps" data-title="Fewest Step Runs" data-icon="zap">
+            <span class="icon zap" aria-hidden="true"></span>
+            <span>Steps</span>
+          </button>
+          <button type="button" data-view="static" data-sort="static" data-title="Static Supervision Bank" data-icon="grid">
+            <span class="icon grid" aria-hidden="true"></span>
+            <span>Static Bank</span>
+          </button>
+          <button type="button" data-view="protocol" data-sort="protocol" data-title="Protocol Notes" data-icon="sliders">
+            <span class="icon sliders" aria-hidden="true"></span>
+            <span>Protocol</span>
+          </button>
+        </div>
+        <div class="run-stats" id="runStats"></div>
+      </div>
+
+      <div class="chip-row" id="kindChips" aria-label="Router type filters"></div>
+    </header>
+
+    <main class="page">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">TwinRouterBench v0</p>
+          <h1 id="pageTitle">Best Routers by Resolve Rate</h1>
+          <p class="hero-copy">
+            Compare conditional per-call LLM routers on heldout SWE-bench Verified runs
+            and inspect the static tier-supervision bank used by the benchmark.
+          </p>
+        </div>
+        <div class="hero-stats" id="heroStats"></div>
+      </section>
+
+      <section class="quick-picks" id="quickPicks" aria-labelledby="quickPicksTitle">
+        <div class="section-kicker">
+          <div>
+            <p>Quick Picks</p>
+            <h2 id="quickPicksTitle">Best routers for common comparisons</h2>
+          </div>
+          <button class="copy-button" type="button" id="copyLink">
+            <span class="icon link" aria-hidden="true"></span>
+            <span>Copy link</span>
+          </button>
+        </div>
+        <div class="pick-grid" id="pickGrid"></div>
+      </section>
+
+      <section class="view is-active" id="dynamicView" aria-labelledby="dynamicTitle">
+        <div class="leaderboard-head">
+          <div>
+            <h2 id="dynamicTitle">Success Rate Rankings</h2>
+            <p id="dynamicDescription"></p>
+          </div>
+          <div class="version-pill" id="versionPill"></div>
+        </div>
+
+        <div class="leaderboard-card">
+          <div class="chart-panel" id="chartPanel" aria-label="Resolve rate chart"></div>
+          <div class="table-wrap">
+            <table class="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Router</th>
+                  <th>Badges</th>
+                  <th>Resolve Rate</th>
+                  <th>Cost</th>
+                  <th>Steps</th>
+                  <th>Value</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboardRows"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="staticView" aria-labelledby="staticTitle">
+        <div class="leaderboard-head">
+          <div>
+            <h2 id="staticTitle">Static Supervision Bank</h2>
+            <p id="staticDescription"></p>
+          </div>
+          <div class="version-pill">conditional per-call labels</div>
+        </div>
+        <div class="workload-grid" id="workloadGrid"></div>
+      </section>
+
+      <section class="view" id="protocolView" aria-labelledby="protocolTitle">
+        <div class="leaderboard-head">
+          <div>
+            <h2 id="protocolTitle">Protocol</h2>
+            <p>Fixed assumptions behind the public leaderboard numbers.</p>
+          </div>
+        </div>
+        <div class="protocol-grid">
+          <article>
+            <h3>Dynamic split</h3>
+            <p id="splitRule"></p>
+            <dl id="splitStats"></dl>
+          </article>
+          <article>
+            <h3>Ranking fields</h3>
+            <p>
+              Success Rate sorts by resolved cases. Cost sorts by average routed spend.
+              Value sorts by resolve-rate percentage per average dollar.
+            </p>
+          </article>
+          <article>
+            <h3>Static target</h3>
+            <p>
+              Static labels are conditional per-call tier targets over low, mid,
+              mid_high, and high model tiers.
+            </p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
