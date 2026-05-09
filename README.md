@@ -84,7 +84,7 @@ The **SemanticRouterKNNRouter** loads:
 
 - `knn_model.json` (feature dim 1024 + 14 category one-hot),
 - `semantic-router` repo root (for `ml_model_selection/models.py` / `KNNModel.load`),
-- **sentence-transformers** embedder (default `Qwen/Qwen3-Embedding-0.6B`; first run downloads weights).
+- **sentence-transformers** embedder (default `Qwen/Qwen3-Embedding-0.6B`; you should downloads weights first).
 
 Ensure a checkout exists at `semantic-router/` relative to the monorepo root (or pass absolute `--router-arg` paths).
 
