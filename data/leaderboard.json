@@ -1,0 +1,179 @@
+{
+  "schema": "twinrouterbench_leaderboard_v1",
+  "generated_at": "2026-05-09",
+  "version": "dynamic-heldout100-static970",
+  "title": "TwinRouterBench Leaderboard",
+  "notice": "Public preview: 4 dynamic router runs, 100 heldout SWE-bench Verified cases, and 970 static conditional per-call labels.",
+  "links": {
+    "github": "https://github.com/CommonstackAI/TwinRouterBench",
+    "dataset": "https://github.com/CommonstackAI/TwinRouterBench/tree/main/data",
+    "static_manifest": "https://github.com/CommonstackAI/TwinRouterBench/blob/main/data/static/manifest.json",
+    "paper": "",
+    "croissant": ""
+  },
+  "dynamic": {
+    "name": "Dynamic SWE-bench Verified heldout",
+    "description": "End-to-end routed SWE-bench Verified evaluation on 100 heldout cases shared by SR-KNN and UncommonRoute dynamic results, excluding CommonRouterBench SWE static supervision instances.",
+    "split": {
+      "cases": 100,
+      "rule": "Take instances shared by SR-KNN and UncommonRoute dynamic results; remove all CommonRouterBench SWE static supervision instances; sort instance ids lexicographically and keep the first 100.",
+      "commonrouterbench_swe_static_cases": 40,
+      "sr_knn_dynamic_result_cases": 294,
+      "uncommonroute_dynamic_result_cases": 122,
+      "shared_dynamic_cases": 120,
+      "shared_overlap_with_static_swe": 19,
+      "heldout_candidates_after_static_removal": 101
+    },
+    "routers": [
+      {
+        "id": "opus46_reference",
+        "name": "Claude Opus 4.6 reference",
+        "kind": "Reference",
+        "benchmark": "SWE-bench Verified heldout",
+        "cases": 100,
+        "resolved": 74,
+        "resolve_rate": 0.74,
+        "total_cost_usd": 54.72827875,
+        "avg_cost_usd": 0.5472827875,
+        "total_steps": 2825,
+        "avg_steps": 28.25,
+        "badges": [
+          "All-high reference",
+          "SWE-bench"
+        ],
+        "notes": "All-Opus dynamic reference on the same heldout split. Cost field is agent cost.",
+        "source": "SWE-bench leaderboard / Docent collection, mini-SWE-agent + Claude Opus 4.6, 2026-02-17"
+      },
+      {
+        "id": "sr_knn",
+        "name": "SR-KNN",
+        "kind": "Static reference",
+        "benchmark": "SWE-bench Verified heldout",
+        "cases": 100,
+        "resolved": 75,
+        "resolve_rate": 0.75,
+        "patch_applied": 98,
+        "total_cost_usd": 55.607370784,
+        "avg_cost_usd": 0.55607370784,
+        "median_cost_usd": 0.393507684,
+        "total_steps": 5009,
+        "avg_steps": 50.09,
+        "median_steps": 44.0,
+        "finished_by": {
+          "Submitted": 94,
+          "LimitsExceeded": 3,
+          "APIError": 3
+        },
+        "model_distribution": {
+          "google/gemini-3-flash-preview": 1698,
+          "anthropic/claude-opus-4.6": 988,
+          "minimax/minimax-m2.7": 2260,
+          "deepseek/deepseek-v3.2": 51
+        },
+        "badges": [
+          "KNN",
+          "Embedding"
+        ],
+        "notes": "In-sample KNN reference over question-bank embeddings."
+      },
+      {
+        "id": "uncommonroute_v06",
+        "name": "UncommonRoute v0.6",
+        "kind": "Public router",
+        "benchmark": "SWE-bench Verified heldout",
+        "cases": 100,
+        "resolved": 73,
+        "resolve_rate": 0.73,
+        "patch_applied": 96,
+        "total_cost_usd": 172.5628115,
+        "avg_cost_usd": 1.725628115,
+        "median_cost_usd": 1.4852126,
+        "total_steps": 2887,
+        "avg_steps": 28.87,
+        "median_steps": 28.0,
+        "finished_by": {
+          "Submitted": 76,
+          "LimitsExceeded": 24
+        },
+        "model_distribution": {
+          "anthropic/claude-opus-4.6": 2809,
+          "minimax/minimax-m2.7": 78
+        },
+        "badges": [
+          "Public",
+          "Rule-based"
+        ],
+        "notes": "Public rule-based router evaluated under the fixed dynamic protocol."
+      },
+      {
+        "id": "uncommonroute_trained",
+        "name": "UncommonRoute trained",
+        "kind": "Trained router",
+        "benchmark": "SWE-bench Verified heldout",
+        "cases": 100,
+        "resolved": 75,
+        "resolve_rate": 0.75,
+        "total_cost_usd": 25.6595579424,
+        "avg_cost_usd": 0.256595579424,
+        "total_steps": 5548,
+        "avg_steps": 55.48,
+        "badges": [
+          "Trained",
+          "Cost-efficient"
+        ],
+        "notes": "Trained UncommonRoute result from new_ur_verified122 dynamic artifacts."
+      }
+    ]
+  },
+  "static": {
+    "name": "Static conditional per-call supervision bank",
+    "total_rows": 970,
+    "target_fields": [
+      "target_tier",
+      "target_tier_id"
+    ],
+    "tiers": [
+      "low",
+      "mid",
+      "mid_high",
+      "high"
+    ],
+    "workloads": [
+      {
+        "id": "swebench",
+        "name": "SWE-bench",
+        "rows": 336,
+        "version": "swebench_verified_40_2026-04-06_gtfix25_fullroute",
+        "stage": "degradation_search_done"
+      },
+      {
+        "id": "bfcl",
+        "name": "BFCL",
+        "rows": 248,
+        "version": "v4",
+        "stage": "ground_truth_ready"
+      },
+      {
+        "id": "mtrag",
+        "name": "mtRAG",
+        "rows": 193,
+        "version": "",
+        "stage": "ground_truth_ready"
+      },
+      {
+        "id": "qmsum",
+        "name": "QMSum",
+        "rows": 145,
+        "version": "",
+        "stage": "ground_truth_ready"
+      },
+      {
+        "id": "pinchbench",
+        "name": "PinchBench",
+        "rows": 48,
+        "version": "mixed_model_validated_2026-04-15",
+        "stage": "mixed_model_validated"
+      }
+    ]
+  }
+}
