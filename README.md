@@ -350,7 +350,7 @@ Under `TwinRouterBench/scripts/examples/`:
 
 ## Citation
 
-If you use TwinRouterBench in research, cite the **TwinRouterBench** paper (placeholder—update when DOI is available).
+If you use TwinRouterBench in research, cite the **TwinRouterBench** paper : https://arxiv.org/html/2605.18859v1.
 
 ---
 
