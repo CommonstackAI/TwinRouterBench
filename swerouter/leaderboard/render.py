@@ -4,8 +4,7 @@
 The primary sort key is ``total_leaderboard_bill_usd`` (ascending: less money =
 better rank). Auxiliary columns are printed for human readability; they do not
 influence the rank. Score files with mismatched ``pricing_fingerprint`` are
-rendered as separate tables to avoid hidden apples-vs-oranges comparisons
-(see ``docs/scoring_zh.md`` §6).
+rendered as separate tables to avoid hidden apples-vs-oranges comparisons.
 """
 
 from __future__ import annotations
@@ -97,8 +96,7 @@ def render_leaderboard(score_files: Iterable[Path | str]) -> str:
     sections.append("")
     sections.append(
         "Primary sort key: `total_leaderboard_bill_usd` ascending (lower USD = better). "
-        "Auxiliary columns are informational only and do not influence rank. "
-        "See `docs/scoring_zh.md` for the full formula."
+        "Auxiliary columns are informational only and do not influence rank."
     )
     sections.append("")
 

@@ -24,7 +24,7 @@ leaderboard 主排序键 = total_leaderboard_bill_usd  （越低越好）
 ### 2.1 单实例
 
 ```
-FAILURE_PENALTY_USD = 0.55   # 全 Opus 基线在评估集上的经验平均成本
+FAILURE_PENALTY_USD = 0.60   # 假定完美求解器的每 case 定价
 
 if instance.resolved == True:
     instance_bill = Σ_i router_actual_cost_i          # 只付真实 router 成本
@@ -35,19 +35,19 @@ if instance.resolved == False:
                     该条 trace 全长真实成本       固定机会成本 / 补救惩罚
 ```
 
-**为什么是固定 \$0.55 而非动态模拟？**
+**为什么是固定 \$0.60 而非动态模拟？**
 - 和步数完全脱钩：不会出现「agent 磨很久 → 惩罚爆炸」。
 - 和定价表弱耦合：不用维护等效步数缓存重放逻辑。
-- \$0.55 来自全程 Opus 基线在当前评估集上的经验平均成本，作为社会/机会成本 proxy。
+- \$0.60 建模为假定完美求解器（100% resolve）的每 case 定价，统一适用于所有 policy（含无路由 baseline）。
 
 ### 2.2 汇总
 
 ```
 total_leaderboard_bill_usd = Σ_instance instance_bill
-                           = Σ router_actual + 0.55 × #unresolved
+                           = Σ router_actual + 0.60 × #unresolved
 
 total_router_cost_usd      = Σ_instance Σ_i router_actual_cost_i   # 辅助列：纯路由 API 真实支出
-total_penalty_cost_usd     = 0.55 × #unresolved                    # 辅助列
+total_penalty_cost_usd     = 0.60 × #unresolved                    # 辅助列
 ```
 
 ## 3. `router_actual_cost_i` 怎么算
@@ -67,11 +67,11 @@ router_actual_cost_i = (usage.input_tokens     × pricing.input_per_m
 
 | 情形 | 处理 |
 |---|---|
-| instance 直接 error（router 抛异常 / harness 崩） | 视为 `resolved=False`，收 \$0.55 固定惩罚；router_cost 只计到崩溃前那一步 |
+| instance 直接 error（router 抛异常 / harness 崩） | 视为 `resolved=False`，收 \$0.60 固定惩罚；router_cost 只计到崩溃前那一步 |
 | instance 超 `max_steps` 但没调 finish tool | 视为 `resolved=False` |
 | instance 超预算 `budget_usd` 主动终止 | 同上 |
-| router 全 instance 返回同一 HIGH model_id | resolved → 只付真实支出；失败 → 真实支出 + \$0.55 |
-| 空 trace（0 步 instance） | 视为 `resolved=False`；`instance_bill = 0 + 0.55 = $0.55`。Harness 应 raise（空 trace 是 bug） |
+| router 全 instance 返回同一 HIGH model_id | resolved → 只付真实支出；失败 → 真实支出 + \$0.60 |
+| 空 trace（0 步 instance） | 视为 `resolved=False`；`instance_bill = 0 + 0.60 = $0.60`。Harness 应 raise（空 trace 是 bug） |
 
 ## 6. 跨版本对比
 

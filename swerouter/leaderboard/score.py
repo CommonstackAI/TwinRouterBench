@@ -2,24 +2,24 @@
 
 The scorer is pure offline: it reads ``results/<instance>.json`` and the
 per-instance ``*.trace.jsonl`` files produced by :mod:`swerouter.harness`` and
-applies the formulas documented in ``docs/scoring_zh.md``.
+applies the penalty-inclusive leaderboard formula below.
 
 Penalty rule (v2 — fixed opportunity-cost add-on)
 -------------------------------------------------
 * **Resolved** instance: ``instance_bill = router_actual_cost``.
 * **Unresolved** instance: ``instance_bill = router_actual_cost + FAILURE_PENALTY_USD``.
 
-``FAILURE_PENALTY_USD`` is a fixed constant (default \$0.55) representing the
-empirical average cost of running the all-Opus baseline on the evaluation set.
-This decouples the penalty from step count and pricing tables, avoids
-"long trace → exploding penalty" artifacts, and keeps the leaderboard formula
-trivial to describe.
+``FAILURE_PENALTY_USD`` is a fixed constant (default \$0.60) representing the
+per-case price of a hypothetical perfect solver.  This applies uniformly to
+every policy (including the unrouted baseline), decouples the penalty from
+step count and pricing tables, avoids "long trace → exploding penalty"
+artifacts, and keeps the leaderboard formula trivial to describe.
 
 Outputs
 -------
 
 * ``total_leaderboard_bill_usd`` — sole leaderboard sort key (lower is better).
-  Equals ``Σ router_actual + 0.55 × #unresolved``.
+  Equals ``Σ router_actual + 0.60 × #unresolved``.
   This is **not** raw API spend; for realized routed spend only use
   ``total_router_cost_usd``.
 * Auxiliary columns (``total_router_cost_usd``, ``total_penalty_cost_usd``,
@@ -39,11 +39,11 @@ from swerouter.infra_errors import is_excluded_from_fair_metrics
 from swerouter.pricing import PricingTable, load_pricing_table, step_real_cost_usd
 from swerouter.usage import normalize_usage
 
-FAILURE_PENALTY_USD: float = 0.55
+FAILURE_PENALTY_USD: float = 0.60
 """Fixed per-instance penalty added to unresolved cases.
 
-This is the empirical average cost of running the all-Opus baseline on the
-evaluation set, used as a fixed opportunity-cost proxy.  It intentionally
+This is the per-case price of a hypothetical perfect solver, applied
+uniformly to every policy (including unrouted baselines).  It intentionally
 does NOT scale with step count or token volume so that "long failing traces"
 do not cause explosive penalties.
 """

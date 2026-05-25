@@ -196,8 +196,7 @@ class RouterAwareModel:
         USD ourselves from :mod:`swerouter.pricing`. Anthropic-style entries
         also get ``set_cache_control="default_end"`` so litellm injects
         ``cache_control: ephemeral`` markers automatically, matching the
-        locked prompt-cache semantics documented in
-        ``swerouter/docs/pricing_and_cache_zh.md``.
+        locked prompt-cache semantics.
         """
 
         cfg_kwargs: dict[str, Any] = {

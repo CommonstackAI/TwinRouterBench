@@ -201,7 +201,7 @@ class BaselineStepCacheDecision:
     ``cold_start`` is True when baseline treats the step as a cache-write from
     scratch (first step, TTL expired). ``cache_read_tokens`` and
     ``cache_write_tokens`` partition the step's total prompt tokens at HIGH
-    model rates (see ``docs/scoring_zh.md`` §4).
+    model rates.
     """
 
     step_index: int
@@ -221,8 +221,7 @@ def simulate_baseline_cache_sequence(
     Because the baseline uses one model for every step, the cache chain is
     perfect unless TTL expires. We do NOT re-tokenize messages under HIGH's
     tokenizer here; we reuse the per-step prompt token counts from the
-    router's actual run (see ``docs/scoring_zh.md`` §4.1 for the first-order
-    approximation note).
+    router's actual run as a first-order approximation.
     """
 
     n = len(prefix_tokens_by_step)

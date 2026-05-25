@@ -65,7 +65,5 @@ CRB 告诉你"每一步**应该**是哪个档位"，SWERouterBench 告诉你"你
 
 ## 相关链接
 
-- [README.md](../README.md)：安装与 CLI 快速开始
-- [`docs/design_zh.md`](design_zh.md)：内部架构
-- [`docs/scoring_zh.md`](scoring_zh.md)：完整打分规则与边界 case
-- [CommonRouterBench/README.md](../../CommonRouterBench/README.md)
+- [TwinRouterBench README](../../README.md)：安装与 CLI 快速开始
+- [TwinRouterBench paper](https://arxiv.org/abs/2605.18859)

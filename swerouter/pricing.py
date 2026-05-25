@@ -4,8 +4,6 @@ Prices live exclusively in ``data/model_pricing.json``. This module does not
 embed any vendor price as a Python literal (user rule: no hardcoded business
 values). Any unknown ``model_id`` or malformed entry raises (user rule: fail
 fast, no silent fallbacks).
-
-See ``docs/pricing_and_cache_zh.md`` for schema documentation.
 """
 
 from __future__ import annotations

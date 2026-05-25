@@ -13,13 +13,13 @@ It contains **two tracks** inside the same product—same protocol and locked ta
 
 ## Where to run commands (important)
 
-Many examples use **paths relative to the monorepo root** (parent of `TwinRouterBench/`), for example:
+Many examples use **paths relative to the checkout parent directory** (the parent of `TwinRouterBench/`), for example:
 
 - `semantic-router/...` — checkout of the **semantic-router** repo (KNN weights and `models.py`).
 - `TwinRouterBench/data/static/...` — static track: `question_bank.jsonl`, `manifest.json`.
 - `TwinRouterBench/data/dynamic/...` — dynamic track: locked pool, pricing, TTL, tier map, SR-KNN mapping.
 
-**Recommended:** `cd` to the monorepo root, `pip install -e "./TwinRouterBench[dynamic]"`, then run `twinrouterbench …` from there so those relative paths resolve.
+**Recommended:** `cd` to the checkout parent directory, `pip install -e "./TwinRouterBench[dynamic]"`, then run `twinrouterbench …` from there so those relative paths resolve.
 
 The dynamic CLI also loads **`TwinRouterBench/.env`** via `miniswerouter.cli` (see [Configuration](#configuration)). That file is resolved from the **TwinRouterBench package directory**, not from your shell `cwd`, so keeping `.env` next to `pyproject.toml` under `TwinRouterBench/` is the supported layout.
 
@@ -86,7 +86,7 @@ The **SemanticRouterKNNRouter** loads:
 - `semantic-router` repo root (for `ml_model_selection/models.py` / `KNNModel.load`),
 - **sentence-transformers** embedder (default `Qwen/Qwen3-Embedding-0.6B`; you should downloads weights first).
 
-Ensure a checkout exists at `semantic-router/` relative to the monorepo root (or pass absolute `--router-arg` paths).
+Ensure a checkout exists at `semantic-router/` relative to the checkout parent directory (or pass absolute `--router-arg` paths).
 
 ---
 
@@ -221,7 +221,7 @@ Long stretches without new console output are normal (Docker pull, repository se
 
 ### Example — gold-tier oracle (paths under TwinRouterBench)
 
-From monorepo root, after installing `[dynamic]`:
+From the checkout parent directory, after installing `[dynamic]`:
 
 ```bash
 twinrouterbench dynamic run \
@@ -240,7 +240,7 @@ Adjust `question_bank_path` if your bank lives elsewhere.
 
 ### Example — Semantic Router **SR KNN** router
 
-Requires `semantic-router/` at monorepo root and CPU/GPU for embeddings (`embedding_device`).
+Requires `semantic-router/` at the checkout parent directory and CPU/GPU for embeddings (`embedding_device`).
 
 ```bash
 twinrouterbench dynamic run \
@@ -271,8 +271,6 @@ twinrouterbench dynamic run \
 | `embedding_device` | `cpu`, `cuda`, or `mps`. |
 | `category` | VSR one-hot bucket passed into the feature vector (default `other` for smoke). |
 
-Larger unattended jobs: see `runs/sr_knn_full/resume.sh` in the monorepo (uses `swerouterbench` with the same router args pattern).
-
 ### `score`, `audit-*`, `render`
 
 ```bash
@@ -284,16 +282,16 @@ twinrouterbench dynamic render --score runs/a/score.json runs/b/score.json --out
 
 `score` writes `score.json` (or `--out`) using the same scorer as the editor harness.
 
-**`score.json` fields** (from `swerouter.leaderboard.score.score_run_dir`; full formulas in [`swerouter/docs/scoring_zh.md`](swerouter/docs/scoring_zh.md)):
+**`score.json` fields** (from `swerouter.leaderboard.score.score_run_dir`):
 
 | Field | Meaning |
 |-------|---------|
 | `router_label` / `run_dir` | Router name and scored directory path. |
 | `pool_fingerprint` / `pricing_schema_version` / `pricing_fingerprint` | Locked pool + pricing identity used when repricing traces. |
 | `high_baseline_model_id` | Tier-high / Opus pool id (benchmark metadata). |
-| `failure_penalty_usd` | Fixed add-on per **unresolved** instance (default `0.55` USD). |
-| **`total_leaderboard_bill_usd`** | **Leaderboard sort key** (lower is better): Σ `instance_bill_usd` = routed spend + penalty on unresolved. |
-| **`total_router_cost_usd`** | Σ realized routed spend only (no penalty). |
+| `failure_penalty_usd` | Fixed add-on per **unresolved** instance (default `0.60` USD, the per-case price of a hypothetical perfect solver). |
+| **`total_leaderboard_bill_usd`** | **Leaderboard sort key** (lower is better): Σ `instance_bill_usd` = router cost + penalty cost on unresolved. |
+| **`total_router_cost_usd`** | Σ realized router cost only (no penalty). |
 | **`total_penalty_cost_usd`** | Σ `penalty_usd` (unresolved instances only). |
 | `resolved_count` / `resolved_rate` / `instance_count` | Resolution stats (denominator respects `exclude_infra_failures` when set). |
 | `avg_steps` / `avg_cost_per_resolved_usd` | Mean steps over counted instances; `total_leaderboard_bill_usd / resolved_count` (or `inf` if none resolved). |
@@ -307,7 +305,7 @@ Older `score.json` files may still use the deprecated key `total_actual_bill_usd
 
 ## Editor scaffold (`twinrouterbench swe …`)
 
-Forwards to **`swerouter.cli`** (full SWE-bench harness in the editor-oriented layout). Requires the same `[dynamic]` extra, Docker, and credentials. See `swerouter/docs/` for protocol details.
+Forwards to **`swerouter.cli`** (full SWE-bench harness in the editor-oriented layout). Requires the same `[dynamic]` extra, Docker, and credentials.
 
 ---
 
@@ -328,7 +326,7 @@ Under `TwinRouterBench/scripts/examples/`:
 | HTTP **401** on chat | `OPENROUTER_BASE_URL` must match the key type (OpenRouter vs CommonStack). Remove or fix `COMMONSTACK_*` if you intend to use raw OpenRouter keys. |
 | `missing required connection settings` on `run` | Set `SWEROUTER_API_KEY` / `OPENROUTER_API_KEY` (after `.env`) or pass `--api-key` / `--base-url`. |
 | Dynamic import errors for `main.*` | Install editable from `TwinRouterBench/` or set `PYTHONPATH` to the `TwinRouterBench` root. |
-| SR KNN `FileNotFoundError` for knn JSON | Ensure paths exist; monorepo root `cwd` is simplest. |
+| SR KNN `FileNotFoundError` for knn JSON | Ensure paths exist; using the checkout parent directory as `cwd` is simplest. |
 | Very slow first SR KNN step | Embedding model download + CPU encoding; use `embedding_device=cuda` when available. |
 | “No output” for many minutes | Docker image pull + SWE environment + agent steps; watch `agent_logs/` or `docker ps`. |
 
@@ -340,7 +338,7 @@ Under `TwinRouterBench/scripts/examples/`:
 |------|---------|
 | `main/` | Static-track package (`main.cli`, tokenizer, pricing, eval). |
 | `miniswerouter/` | Dynamic track on **mini-swe-agent**. |
-| `swerouter/` | Router protocol, pricing, cache simulation, harness, leaderboard; `swerouter/docs/`. |
+| `swerouter/` | Router protocol, pricing, cache simulation, harness, and leaderboard. |
 | `data/static/` | Static track JSONL: `question_bank.jsonl`, `manifest.json`. |
 | `data/dynamic/` | Dynamic track locked JSON: `model_pool.json`, `model_pricing.json`, `ttl_policy.json`, `tier_to_model.json`, `sr_knn_to_pool.json`, … |
 | `twinrouterbench/` | Meta-CLI dispatcher. |
@@ -350,23 +348,20 @@ Under `TwinRouterBench/scripts/examples/`:
 
 ## Citation
 
-If you use TwinRouterBench in research, cite the **TwinRouterBench** paper : https://arxiv.org/html/2605.18859v1.
+If you use TwinRouterBench in research, cite the **TwinRouterBench** paper: [arXiv:2605.18859](https://arxiv.org/abs/2605.18859).
 
----
-
-## Further reading
-
-- Pricing and cache semantics (Chinese): [`swerouter/docs/pricing_and_cache_zh.md`](swerouter/docs/pricing_and_cache_zh.md)
-- Scoring rules: [`swerouter/docs/scoring_zh.md`](swerouter/docs/scoring_zh.md)
-
----
+```bibtex
+@misc{yang2026twinrouterbench,
+  title={TwinRouterBench: Fast Static and Live Dynamic Evaluation for Realistic Agentic LLM Routing},
+  author={Pei Yang and Wanyi Chen and Tongyun Yang and Pengbin Feng and Jiarong Xing and Wentao Guo and Yuhang Yao and Yuhang Han and Hanchen Li and Xu Wang and Zeyu Wang and Jie Xiao and Anjie Yang and Liang Tian and Lynn Ai and Eric Yang and Tianyu Shi},
+  year={2026},
+  eprint={2605.18859},
+  archivePrefix={arXiv},
+  primaryClass={cs.LG},
+  url={https://arxiv.org/abs/2605.18859}
+}
+```
 
 ## Implementation note (CLI forwarding)
 
 `twinrouterbench static|dynamic|swe` dispatches in-process to the existing CLIs. For debugging, you may still invoke `python -m miniswerouter.cli` or `python -m swerouter.cli` with `PYTHONPATH` set to `TwinRouterBench/`.
-
----
-
-## Appendix: migration
-
-This tree supersedes separate installs of the historical static and dynamic router benchmark packages for **development inside this monorepo**. Use **TwinRouterBench** naming in new scripts and papers; keep legacy pathnames only where required for one-off comparison.

@@ -58,4 +58,4 @@ main = [
   "../data/static/question_bank.jsonl",
   "tokenizer_data/*.json",
 ]
-swerouter = ["../data/dynamic/*.json", "docs/*.md"]
+swerouter = ["../data/dynamic/*.json"]

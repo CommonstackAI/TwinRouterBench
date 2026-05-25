@@ -2,8 +2,8 @@
 # Load API credentials for TwinRouterBench example wrappers (dynamic track).
 #
 # Layout:
-#   <monorepo>/TwinRouterBench/scripts/examples/env.inc.sh
-#   <monorepo>/TwinRouterBench/.env   <-- OPENROUTER_* / CommonStack, etc.
+#   <checkout-parent>/TwinRouterBench/scripts/examples/env.inc.sh
+#   <checkout-parent>/TwinRouterBench/.env   <-- OPENROUTER_* / CommonStack, etc.
 
 TRB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 

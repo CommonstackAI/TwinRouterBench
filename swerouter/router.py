@@ -1,8 +1,8 @@
 """Router protocol, context, decision and reference wrappers.
 
-See ``docs/router_api_zh.md`` for the full behaviour contract. This module is
-intentionally dependency-free (standard library only) so router implementers
-can unit-test against it without pulling in ``docker`` or ``swebench``.
+This module is intentionally dependency-free (standard library only) so router
+implementers can unit-test against it without pulling in ``docker`` or
+``swebench``.
 """
 
 from __future__ import annotations

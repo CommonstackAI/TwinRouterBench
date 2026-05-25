@@ -4,7 +4,6 @@ Different vendors report token usage differently. The leaderboard requires one
 uniform 4-bucket view (input / cache_read / cache_write / output) so that
 ``step_real_cost_usd`` can apply per-model prices unambiguously.
 
-Vendor mapping rules are documented in ``docs/pricing_and_cache_zh.md`` §2.
 Unknown providers, missing fields, or negative counts raise (fail fast).
 """
 

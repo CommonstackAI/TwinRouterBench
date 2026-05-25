@@ -1,7 +1,5 @@
 # SWERouterBench: paying the real bill for per-step LLM routing
 
-> Chinese translation: [blog_intro_zh.md](blog_intro_zh.md).
-
 [CommonRouterBench](https://github.com/CommonRouterBench/CommonRouterBench) is static. It hands routers a curated question bank of 970 pre-recorded conversation prefixes; every router has to return a 0–3 tier id, and we score the prediction against a gold tier. That is useful for training and for offline routing research, but it does not answer the question that gets asked in every production review meeting:
 
 > "If we route through your router on SWE-bench Verified, how many bugs does it actually fix, and how many real dollars does it burn?"
@@ -69,7 +67,5 @@ If you maintain a router and want to see it on the leaderboard, open an issue wi
 
 ## See also
 
-- [README.md](../README.md) — installation and CLI quick start.
-- [`docs/design_zh.md`](design_zh.md) — internal architecture (Chinese).
-- [`docs/scoring_zh.md`](scoring_zh.md) — full scoring formula and edge cases (Chinese).
-- [CommonRouterBench/README.md](../../CommonRouterBench/README.md).
+- [TwinRouterBench README](../../README.md) — installation and CLI quick start.
+- [TwinRouterBench paper](https://arxiv.org/abs/2605.18859).
