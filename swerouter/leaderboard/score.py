@@ -4,7 +4,7 @@ The scorer is pure offline: it reads ``results/<instance>.json`` and the
 per-instance ``*.trace.jsonl`` files produced by :mod:`swerouter.harness`` and
 applies the penalty-inclusive leaderboard formula below.
 
-Penalty rule (v2 — fixed opportunity-cost add-on)
+Penalty rule (v2 �?fixed opportunity-cost add-on)
 -------------------------------------------------
 * **Resolved** instance: ``instance_bill = router_actual_cost``.
 * **Unresolved** instance: ``instance_bill = router_actual_cost + FAILURE_PENALTY_USD``.
@@ -12,13 +12,13 @@ Penalty rule (v2 — fixed opportunity-cost add-on)
 ``FAILURE_PENALTY_USD`` is a fixed constant (default \$0.60) representing the
 per-case price of a hypothetical perfect solver.  This applies uniformly to
 every policy (including the unrouted baseline), decouples the penalty from
-step count and pricing tables, avoids "long trace → exploding penalty"
+step count and pricing tables, avoids "long trace �?exploding penalty"
 artifacts, and keeps the leaderboard formula trivial to describe.
 
 Outputs
 -------
 
-* ``total_leaderboard_bill_usd`` — sole leaderboard sort key (lower is better).
+* ``total_leaderboard_bill_usd`` �?sole leaderboard sort key (lower is better).
   Equals ``Σ router_actual + 0.60 × #unresolved``.
   This is **not** raw API spend; for realized routed spend only use
   ``total_router_cost_usd``.
@@ -32,7 +32,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Collection, Mapping
 
 from swerouter.agent.loop import ModelPoolEntry, load_model_pool
 from swerouter.infra_errors import is_excluded_from_fair_metrics
@@ -152,6 +152,8 @@ def score_run_dir(
     pool_path: Path | None = None,
     exclude_infra_failures: bool = False,
     reprice_from_raw_usage: bool = False,
+    fixed_failure_penalty_usd: float | None = None,
+    instance_id_allowlist: Collection[str] | None = None,
 ) -> dict[str, Any]:
     """Compute leaderboard numbers for a run directory produced by :mod:`swerouter.harness`.
 
@@ -162,7 +164,7 @@ def score_run_dir(
         ``results/<instance_id>.json`` files and the ``*.trace.jsonl`` files.
     router_label
         Human-readable router label written into the score report.
-    pricing_path / pool_path
+    pricing_path / ttl_path / pool_path
         Optional overrides; defaults to ``data/dynamic/*.json`` under TwinRouterBench
         repo root.
     ttl_path
@@ -180,6 +182,16 @@ def score_run_dir(
         trace using the current ``normalize_usage`` + ``model_pricing.json``
         (fixes historical traces written under older usage mapping). Raises if
         any step lacks ``raw_usage`` or ``model_id``.
+    fixed_failure_penalty_usd
+        When set (e.g. ``0.55``), each **unresolved** instance adds this constant
+        USD penalty instead of the TTL-simulated HIGH replay of the actual trace
+        (``baseline_high_cost_usd``). ``router_actual_cost_usd`` is unchanged.
+        ``baseline_high_cost_usd`` in ``per_instance`` remains the simulated
+        replay for diagnostics; ``penalty_usd`` is the value applied to the bill.
+    instance_id_allowlist
+        When set, only ``results/<id>.json`` whose ``instance_id`` is in this
+        collection are scored. Headline totals and ``instance_count`` reflect
+        this subset only. Missing IDs are listed under ``allowlist_missing_ids``.
     """
 
     run_dir = Path(run_dir)
@@ -197,6 +209,15 @@ def score_run_dir(
     result_paths = sorted(results_dir.glob("*.json"))
     if not result_paths:
         raise ValueError(f"no per-instance result files under {results_dir}")
+
+    allow: frozenset[str] | None = None
+    if instance_id_allowlist is not None:
+        allow = frozenset(str(x) for x in instance_id_allowlist)
+        result_paths = [p for p in result_paths if p.stem in allow]
+        if not result_paths:
+            raise ValueError(
+                "instance_id_allowlist matched no results/*.json under this run_dir."
+            )
 
     per_instance: list[dict] = []
     total_bill = 0.0
@@ -220,6 +241,10 @@ def score_run_dir(
         trace_path = Path(blob.get("trace_path") or "")
         if not trace_path.is_absolute():
             trace_path = (run_dir / trace_path).resolve()
+        if not trace_path.is_file():
+            fallback = run_dir / f"{instance_id}.trace.jsonl"
+            if fallback.is_file():
+                trace_path = fallback.resolve()
 
         steps = _iter_trace_steps(trace_path)
         if reprice_from_raw_usage:
@@ -234,6 +259,9 @@ def score_run_dir(
         if resolved:
             instance_bill = router_actual
             penalty = 0.0
+        elif fixed_failure_penalty_usd is not None:
+            penalty = float(fixed_failure_penalty_usd)
+            instance_bill = router_actual + penalty
         else:
             penalty = FAILURE_PENALTY_USD
             instance_bill = router_actual + penalty
@@ -296,6 +324,12 @@ def score_run_dir(
         out["infra_excluded_count"] = infra_excluded_n
     if reprice_from_raw_usage:
         out["reprice_from_raw_usage"] = True
+    if fixed_failure_penalty_usd is not None:
+        out["fixed_failure_penalty_usd"] = float(fixed_failure_penalty_usd)
+    if allow is not None:
+        missing = sorted(allow - {r["instance_id"] for r in per_instance})
+        out["instance_id_allowlist_size"] = len(allow)
+        out["allowlist_missing_ids"] = missing
     return out
 
 

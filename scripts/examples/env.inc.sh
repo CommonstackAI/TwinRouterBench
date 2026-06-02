@@ -3,7 +3,7 @@
 #
 # Layout:
 #   <checkout-parent>/TwinRouterBench/scripts/examples/env.inc.sh
-#   <checkout-parent>/TwinRouterBench/.env   <-- OPENROUTER_* / CommonStack, etc.
+#   <checkout-parent>/TwinRouterBench/.env   <-- OPENROUTER_* / optional gateway overrides, etc.
 
 TRB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 

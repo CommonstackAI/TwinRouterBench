@@ -34,9 +34,10 @@ dynamic = [
   "litellm>=1.50.0",
 ]
 
-[project.urls]
-Homepage = "https://github.com/CommonstackAI/TwinRouterBench"
-Repository = "https://github.com/CommonstackAI/TwinRouterBench"
+# Omitted for anonymous review (restore public repo URLs after acceptance).
+# [project.urls]
+# Homepage = "https://github.com/ORG/TwinRouterBench"
+# Repository = "https://github.com/ORG/TwinRouterBench"
 
 [project.scripts]
 twinrouterbench = "twinrouterbench.cli:main"

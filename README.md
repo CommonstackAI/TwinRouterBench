@@ -55,7 +55,7 @@ If you run `twinrouterbench dynamic` or `twinrouterbench swe` without `[dynamic]
 **Load order (dynamic / mini CLI):**
 
 1. **`_load_mini_dotenv`** — reads `TwinRouterBench/.env` and sets any key that is **missing or empty** in the process environment (already-set variables win).
-2. **`_apply_gateway_aliases`** — if CommonStack variables are set, they **override** chat-related OpenRouter/SWERouter URL and API key (see table below).
+2. **`_apply_gateway_aliases`** — if optional gateway override variables are set, they **override** chat-related OpenRouter/SWERouter URL and API key (see table below).
 
 | Variable | Purpose |
 |----------|---------|
@@ -63,10 +63,10 @@ If you run `twinrouterbench dynamic` or `twinrouterbench swe` without `[dynamic]
 | `OPENROUTER_API_KEY` | Bearer token for the gateway above. |
 | `OPENROUTER_API_KEY_EXP` | Optional alternate key; if `OPENROUTER_API_KEY` is empty after dotenv, it is copied from this. |
 | `SWEROUTER_BASE_URL` / `SWEROUTER_API_KEY` | Optional explicit names; `miniswerouterbench run` defaults fall back to `OPENROUTER_*` when unset. |
-| `COMMONSTACK_API_BASE` | If set, **replaces** `OPENROUTER_BASE_URL` and `SWEROUTER_BASE_URL` after bootstrap. |
-| `COMMONSTACK_API_KEY` | If set, **replaces** `OPENROUTER_API_KEY`, `OPENROUTER_API_KEY_EXP`, and `SWEROUTER_API_KEY` after bootstrap. |
+| `COMMONSTACK_API_BASE` | Optional override: if set, **replaces** `OPENROUTER_BASE_URL` and `SWEROUTER_BASE_URL` after bootstrap (legacy env name; see `.env.example`). |
+| `COMMONSTACK_API_KEY` | Optional override: if set, **replaces** `OPENROUTER_API_KEY`, `OPENROUTER_API_KEY_EXP`, and `SWEROUTER_API_KEY` after bootstrap. |
 
-**Common pitfall:** `OPENROUTER_BASE_URL` pointing at **CommonStack** while `OPENROUTER_API_KEY` is still an **OpenRouter** `sk-or-v1-…` key (or the reverse) yields **401** or “invalid access key”. Use a **consistent** pair: either full CommonStack base + CommonStack access key, or OpenRouter base + OpenRouter key.
+**Common pitfall:** `OPENROUTER_BASE_URL` and `OPENROUTER_API_KEY` must refer to the **same** provider. Mixing a custom gateway base URL with another vendor’s API key (or the reverse) yields **401** or “invalid access key”.
 
 Shell snippets under `TwinRouterBench/scripts/examples/env.inc.sh` mirror the Python alias logic for bash-driven runs.
 
@@ -104,7 +104,7 @@ Compatibility console scripts (same code after the same install):
 
 | Script | Module |
 |--------|--------|
-| `CommonRouterBench` | `main.cli` |
+| `CommonRouterBench` | `main.cli` (legacy console script name) |
 | `miniswerouterbench` | `miniswerouter.cli` |
 | `swerouterbench` | `swerouter.cli` |
 
@@ -323,7 +323,7 @@ Under `TwinRouterBench/scripts/examples/`:
 
 | Symptom | Things to check |
 |---------|------------------|
-| HTTP **401** on chat | `OPENROUTER_BASE_URL` must match the key type (OpenRouter vs CommonStack). Remove or fix `COMMONSTACK_*` if you intend to use raw OpenRouter keys. |
+| HTTP **401** on chat | `OPENROUTER_BASE_URL` and `OPENROUTER_API_KEY` must be from the same provider. Unset `COMMONSTACK_*` overrides if you intend to use only `OPENROUTER_*` / `SWEROUTER_*`. |
 | `missing required connection settings` on `run` | Set `SWEROUTER_API_KEY` / `OPENROUTER_API_KEY` (after `.env`) or pass `--api-key` / `--base-url`. |
 | Dynamic import errors for `main.*` | Install editable from `TwinRouterBench/` or set `PYTHONPATH` to the `TwinRouterBench` root. |
 | SR KNN `FileNotFoundError` for knn JSON | Ensure paths exist; using the checkout parent directory as `cwd` is simplest. |
@@ -348,20 +348,15 @@ Under `TwinRouterBench/scripts/examples/`:
 
 ## Citation
 
-If you use TwinRouterBench in research, cite the **TwinRouterBench** paper: [arXiv:2605.18859](https://arxiv.org/abs/2605.18859).
+If you use Twin Router Bench in research, please cite the associated paper. **Bibliographic details are withheld for anonymous review** and will be added after publication (no preprint URL in this release).
 
-```bibtex
-@misc{yang2026twinrouterbench,
-  title={TwinRouterBench: Fast Static and Live Dynamic Evaluation for Realistic Agentic LLM Routing},
-  author={Pei Yang and Wanyi Chen and Tongyun Yang and Pengbin Feng and Jiarong Xing and Wentao Guo and Yuhang Yao and Yuhang Han and Hanchen Li and Xu Wang and Zeyu Wang and Jie Xiao and Anjie Yang and Liang Tian and Lynn Ai and Eric Yang and Tianyu Shi},
-  year={2026},
-  eprint={2605.18859},
-  archivePrefix={arXiv},
-  primaryClass={cs.LG},
-  url={https://arxiv.org/abs/2605.18859}
-}
-```
 
 ## Implementation note (CLI forwarding)
 
 `twinrouterbench static|dynamic|swe` dispatches in-process to the existing CLIs. For debugging, you may still invoke `python -m miniswerouter.cli` or `python -m swerouter.cli` with `PYTHONPATH` set to `TwinRouterBench/`.
+
+---
+
+## Appendix: migration
+
+This tree unifies the static and dynamic router benchmark tracks in one install. Use **Twin Router Bench** naming in new scripts; keep legacy console script names and pathnames only where required for backward compatibility.

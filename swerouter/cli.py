@@ -238,6 +238,15 @@ def _cmd_run(args: argparse.Namespace) -> int:
 def _cmd_score(args: argparse.Namespace) -> int:
     from swerouter.leaderboard.score import score_run_dir
 
+    allowlist = None
+    if args.instance_ids_file:
+        raw = Path(args.instance_ids_file).read_text(encoding="utf-8")
+        allowlist = frozenset(
+            ln.strip()
+            for ln in raw.splitlines()
+            if ln.strip() and not ln.strip().startswith("#")
+        )
+
     score = score_run_dir(
         run_dir=Path(args.run_dir),
         router_label=args.router_label,
@@ -246,6 +255,8 @@ def _cmd_score(args: argparse.Namespace) -> int:
         pool_path=Path(args.pool) if args.pool else None,
         exclude_infra_failures=bool(args.exclude_infra_failures),
         reprice_from_raw_usage=bool(args.reprice_from_raw_usage),
+        fixed_failure_penalty_usd=args.fixed_failure_penalty_usd,
+        instance_id_allowlist=allowlist,
     )
     out_path = Path(args.out) if args.out else Path(args.run_dir) / "score.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -272,6 +283,10 @@ def _cmd_score(args: argparse.Namespace) -> int:
         summary["infra_excluded_count"] = score["infra_excluded_count"]
     if score.get("reprice_from_raw_usage"):
         summary["reprice_from_raw_usage"] = True
+    if score.get("fixed_failure_penalty_usd") is not None:
+        summary["fixed_failure_penalty_usd"] = score["fixed_failure_penalty_usd"]
+    if score.get("allowlist_missing_ids") is not None:
+        summary["allowlist_missing_ids"] = score["allowlist_missing_ids"]
     print(json.dumps(summary, indent=2))
     return 0
 
@@ -428,6 +443,20 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Recompute per-step USD and baseline inputs from trace raw_usage "
         "using current normalize_usage + pricing (historical trace correction).",
+    )
+    score.add_argument(
+        "--fixed-failure-penalty-usd",
+        type=float,
+        default=None,
+        metavar="USD",
+        help="If set, each unresolved instance adds this constant USD instead of "
+        "the HIGH baseline replay of the actual trace (router spend is unchanged).",
+    )
+    score.add_argument(
+        "--instance-ids-file",
+        default=None,
+        help="Optional text file: one instance_id per line (# comments allowed). "
+        "Only those results/*.json rows are scored; headline totals are subset-only.",
     )
     score.set_defaults(func=_cmd_score)
 
