@@ -1,5 +1,10 @@
 # Twin Router Bench
 
+[![Paper](https://img.shields.io/badge/Paper-arXiv-b31b1b)](https://arxiv.org/html/2605.18859)
+[![Code](https://img.shields.io/badge/Code-GitHub-24292f)](https://github.com/CommonstackAI/TwinRouterBench)
+[![Dataset](https://img.shields.io/badge/Dataset-Hugging%20Face-ffcc4d)](https://huggingface.co/datasets/Amorph/TwinRouterBench)
+[![Website](https://img.shields.io/badge/Website-Project-2ea44f)](https://commonstackai.github.io/TwinRouterBench/)
+
 **Twin Router Bench** is a single benchmark suite for **per-step LLM routing**: a *router* chooses which pooled `model_id` to use on every agent step, under locked pricing and cache rules. The suite ships in one Python distribution (**`twinrouterbench`**) and one source tree (**`TwinRouterBench/`**).
 
 It contains **two tracks** inside the same product—same protocol and locked tables—not two separate benchmarks:
