@@ -73,31 +73,30 @@ def _load_swerouter_dotenv() -> None:
             os.environ[key] = val
 
 
-def _apply_gateway_aliases() -> None:
-    """Map CommonStack-style env names to ``OPENROUTER_*`` / ``SWEROUTER_*``.
+def _apply_openrouter_aliases() -> None:
+    """Normalize OpenRouter env names for the dynamic CLIs.
 
-    When ``COMMONSTACK_API_BASE`` / ``COMMONSTACK_API_KEY`` are set, they take
-    precedence so a single gateway block in ``TwinRouterBench/.env`` is enough.
+    ``OPENROUTER_*`` is canonical. ``SWEROUTER_*`` defaults to the same values;
+    ``OPENROUTER_API_KEY_EXP`` fills an empty ``OPENROUTER_API_KEY`` after dotenv.
     """
 
-    base = (os.environ.get("COMMONSTACK_API_BASE") or "").strip()
-    if base:
-        os.environ["OPENROUTER_BASE_URL"] = base
-        os.environ["SWEROUTER_BASE_URL"] = base
-    ck = (os.environ.get("COMMONSTACK_API_KEY") or "").strip()
-    if ck:
-        os.environ["OPENROUTER_API_KEY_EXP"] = ck
-        os.environ["OPENROUTER_API_KEY"] = ck
-        os.environ["SWEROUTER_API_KEY"] = ck
     if not (os.environ.get("OPENROUTER_API_KEY") or "").strip():
         exp = (os.environ.get("OPENROUTER_API_KEY_EXP") or "").strip()
         if exp:
             os.environ["OPENROUTER_API_KEY"] = exp
 
+    base = (os.environ.get("OPENROUTER_BASE_URL") or "").strip()
+    if base and not (os.environ.get("SWEROUTER_BASE_URL") or "").strip():
+        os.environ["SWEROUTER_BASE_URL"] = base
+
+    key = (os.environ.get("OPENROUTER_API_KEY") or "").strip()
+    if key and not (os.environ.get("SWEROUTER_API_KEY") or "").strip():
+        os.environ["SWEROUTER_API_KEY"] = key
+
 
 def _bootstrap_swerouter_env() -> None:
     _load_swerouter_dotenv()
-    _apply_gateway_aliases()
+    _apply_openrouter_aliases()
 
 
 def _parse_router_args(pairs: list[str]) -> dict[str, str]:
@@ -507,7 +506,7 @@ def main(argv: list[str] | None = None) -> int:
         if missing:
             parser.error(
                 f"missing required connection settings: {missing}. Pass --base-url / --api-key "
-                f"or set SWEROUTER_BASE_URL / SWEROUTER_API_KEY (or OPENROUTER_* / COMMONSTACK_*; "
+                f"or set SWEROUTER_BASE_URL / SWEROUTER_API_KEY (or OPENROUTER_*; "
                 f"see README)."
             )
 

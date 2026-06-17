@@ -6,7 +6,7 @@ All notable changes to **TwinRouterBench** are documented in this file.
 
 ### Changed
 
-- Static track data now lives under **`data/static/`** (alongside **`data/dynamic/`**). `main.dataset.DATA_DIR` points at `data/static/`. The question bank and manifest are copied from `CommonRouterBench/data/` into this tree for a complete checkout.
+- Static track data now lives under **`data/static/`** (alongside **`data/dynamic/`**). `main.dataset.DATA_DIR` points at `data/static/`. The question bank and manifest ship in-tree for a complete checkout.
 
 ### Added
 

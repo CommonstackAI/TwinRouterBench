@@ -1,6 +1,6 @@
 {
   "schema_version": 11,
-  "notes": "Tier -> concrete model_id mapping for the unified 4-model dual-router benchmarking pool. Tiers follow CommonRouterBench PUBLIC_TIERS (low/mid/mid_high/high). Tier 'high' maps to anthropic/claude-opus-4.6 to match the pool's is_high_baseline designation. IDs must stay in sync with data/model_pool.json.",
+  "notes": "Tier -> concrete model_id mapping for the unified 4-model dual-router benchmarking pool. Tiers follow the static track PUBLIC_TIERS (low/mid/mid_high/high). Tier 'high' maps to anthropic/claude-opus-4.6 to match the pool's is_high_baseline designation. IDs must stay in sync with data/model_pool.json.",
   "map": {
     "low": "deepseek/deepseek-v3.2",
     "mid": "minimax/minimax-m2.7",

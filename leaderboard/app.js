@@ -78,12 +78,15 @@ function filteredRouters() {
 }
 
 function renderNotice() {
+  const repoLink = state.data.links.github
+    ? `<a href="${state.data.links.github}" target="_blank" rel="noreferrer">View repository</a>`
+    : "";
   els.noticeBar.innerHTML = `
     <div class="notice-inner">
       <span class="notice-spark" aria-hidden="true"></span>
       <strong>Leaderboard preview</strong>
       <span>${state.data.notice}</span>
-      <a href="${state.data.links.github}" target="_blank" rel="noreferrer">View repository</a>
+      ${repoLink}
     </div>
   `;
 }

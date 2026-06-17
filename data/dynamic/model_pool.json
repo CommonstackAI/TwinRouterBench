@@ -1,6 +1,6 @@
 {
   "schema_version": 10,
-  "notes": "Unified 4-model pool for dual-router SWERouterBench benchmarking (UncommonRoute vs semantic-router KNN). IDs taken verbatim from OpenRouter /api/v1/models on 2026-04-22. Exactly one is_high_baseline=true (anthropic/claude-opus-4.6) drives failure-rerun charge. provider='openai_compat' universally (OpenRouter returns OpenAI-compat usage envelopes). cache_control_style='anthropic' only for Claude family so the harness injects ephemeral cache_control blocks; others rely on provider-side cache accounting.",
+  "notes": "Unified 4-model pool for dual-router SWERouterBench benchmarking (public rule router vs semantic-router KNN). IDs taken verbatim from OpenRouter /api/v1/models on 2026-04-22. Exactly one is_high_baseline=true (anthropic/claude-opus-4.6) drives failure-rerun charge. provider='openai_compat' universally (OpenRouter returns OpenAI-compat usage envelopes). cache_control_style='anthropic' only for Claude family so the harness injects ephemeral cache_control blocks; others rely on provider-side cache accounting.",
   "pool": [
     {
       "model_id": "anthropic/claude-opus-4.6",

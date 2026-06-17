@@ -3,23 +3,23 @@
   "generated_at": "2026-05-09",
   "version": "dynamic-heldout100-static970",
   "title": "TwinRouterBench Leaderboard",
-  "notice": "Public preview: 4 dynamic router runs, 100 heldout SWE-bench Verified cases, and 970 static conditional per-call labels.",
+  "notice": "Anonymous review preview: 4 dynamic router runs, 100 heldout SWE-bench Verified cases, and 970 static conditional per-call labels.",
   "links": {
-    "github": "https://github.com/CommonstackAI/TwinRouterBench",
-    "dataset": "https://github.com/CommonstackAI/TwinRouterBench/tree/main/data",
-    "static_manifest": "https://github.com/CommonstackAI/TwinRouterBench/blob/main/data/static/manifest.json",
+    "github": "",
+    "dataset": "",
+    "static_manifest": "",
     "paper": "",
     "croissant": ""
   },
   "dynamic": {
     "name": "Dynamic SWE-bench Verified heldout",
-    "description": "End-to-end routed SWE-bench Verified evaluation on 100 heldout cases shared by SR-KNN and UncommonRoute dynamic results, excluding CommonRouterBench SWE static supervision instances.",
+    "description": "End-to-end routed SWE-bench Verified evaluation on 100 heldout cases shared by SR-KNN and a public rule-based router, excluding static-track SWE supervision instances.",
     "split": {
       "cases": 100,
-      "rule": "Take instances shared by SR-KNN and UncommonRoute dynamic results; remove all CommonRouterBench SWE static supervision instances; sort instance ids lexicographically and keep the first 100.",
-      "commonrouterbench_swe_static_cases": 40,
+      "rule": "Take instances shared by SR-KNN and the public rule-based router dynamic results; remove all static-track SWE supervision instances; sort instance_ids lexicographically and keep the first 100.",
+      "static_swe_supervision_cases": 40,
       "sr_knn_dynamic_result_cases": 294,
-      "uncommonroute_dynamic_result_cases": 122,
+      "rule_router_dynamic_result_cases": 122,
       "shared_dynamic_cases": 120,
       "shared_overlap_with_static_swe": 19,
       "heldout_candidates_after_static_removal": 101
@@ -42,7 +42,7 @@
           "SWE-bench"
         ],
         "notes": "All-Opus dynamic reference on the same heldout split. Cost field is agent cost.",
-        "source": "SWE-bench leaderboard / Docent collection, mini-SWE-agent + Claude Opus 4.6, 2026-02-17"
+        "source": "SWE-bench leaderboard / external collection, mini-SWE-agent + Claude Opus 4.6, 2026-02-17"
       },
       {
         "id": "sr_knn",
@@ -77,8 +77,8 @@
         "notes": "In-sample KNN reference over question-bank embeddings."
       },
       {
-        "id": "uncommonroute_v06",
-        "name": "UncommonRoute v0.6",
+        "id": "rule_router_v06",
+        "name": "Public rule router v0.6",
         "kind": "Public router",
         "benchmark": "SWE-bench Verified heldout",
         "cases": 100,
@@ -106,8 +106,8 @@
         "notes": "Public rule-based router evaluated under the fixed dynamic protocol."
       },
       {
-        "id": "uncommonroute_trained",
-        "name": "UncommonRoute trained",
+        "id": "rule_router_trained",
+        "name": "Trained rule router",
         "kind": "Trained router",
         "benchmark": "SWE-bench Verified heldout",
         "cases": 100,
@@ -121,7 +121,7 @@
           "Trained",
           "Cost-efficient"
         ],
-        "notes": "Trained UncommonRoute result from new_ur_verified122 dynamic artifacts."
+        "notes": "Trained rule-router result from heldout dynamic artifacts."
       }
     ]
   },

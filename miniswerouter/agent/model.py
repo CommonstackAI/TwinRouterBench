@@ -168,7 +168,7 @@ class RouterAwareModel:
         """Pick the LiteLLM ``model=`` prefix for ``model_kwargs.api_base``.
 
         ``openrouter/...`` keeps OpenRouter-specific client behaviour (headers,
-        transforms). For OpenAI-compatible gateways (CommonStack, local vLLM,
+        transforms). For OpenAI-compatible gateways (local vLLM,
         etc.) use ``openai/...`` so LiteLLM sends a plain ``/v1/chat/completions``
         POST with ``Authorization: Bearer <api_key>`` and ``model`` equal to
         the pool ``model_id`` string after the prefix.
