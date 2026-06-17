@@ -1,10 +1,10 @@
 # SWERouterBench: paying the real bill for per-step LLM routing
 
-The **static track** of Twin Router Bench is offline. It hands routers a curated question bank of 970 pre-recorded conversation prefixes; every router has to return a 0–3 tier id, and we score the prediction against a gold tier. That is useful for training and for offline routing research, but it does not answer the question that gets asked in every production review meeting:
+[CommonRouterBench](https://github.com/CommonRouterBench/CommonRouterBench) is static. It hands routers a curated question bank of 970 pre-recorded conversation prefixes; every router has to return a 0–3 tier id, and we score the prediction against a gold tier. That is useful for training and for offline routing research, but it does not answer the question that gets asked in every production review meeting:
 
 > "If we route through your router on SWE-bench Verified, how many bugs does it actually fix, and how many real dollars does it burn?"
 
-The **dynamic track** is the benchmark that answers that. It is the live SWE-bench counterpart of the static track.
+**SWERouterBench** is the benchmark that answers that. It is the dynamic sibling of CommonRouterBench.
 
 ## What it is
 
@@ -39,9 +39,9 @@ SWERouterBench does not let you bring your own pricing. The official pool and th
 
 SWERouterBench is not a training-data dump. Traces are per-run artifacts and are `.gitignore`d; they belong to whoever ran the router.
 
-## Relationship to the static track
+## Relationship to CommonRouterBench
 
-| Dimension | Static track | Dynamic track |
+| Dimension | CommonRouterBench | SWERouterBench |
 |---|---|---|
 | Shape | static 970-row question bank | 500 SWE-bench Verified instances, live-run |
 | Router output | tier id 0–3 | concrete `model_id` from locked pool |
@@ -50,9 +50,9 @@ SWERouterBench is not a training-data dump. Traces are per-run artifacts and are
 | Cache model | step-distance TTL = 3 | wall-clock TTL = 300s |
 | Top-line metric | `scores_v2.combined_score` (4-dim average) | `total_leaderboard_bill_usd` (penalty-inclusive total bill, USD) |
 | Deps | lightweight | `swebench`, `docker` |
-| PyPI extra | base install | `[dynamic]` optional extra |
+| PyPI | `CommonRouterBench` | `SWERouterBench` (depends on `CommonRouterBench`) |
 
-The static track tells you *what kind* of model each step needs. The dynamic track tells you *what it actually costs* to be wrong about that.
+CRB tells you *what kind* of model each step needs. SWERouterBench tells you *what it actually costs* to be wrong about that.
 
 ## Roadmap
 
@@ -68,4 +68,4 @@ If you maintain a router and want to see it on the leaderboard, open an issue wi
 ## See also
 
 - [TwinRouterBench README](../../README.md) — installation and CLI quick start.
-- TwinRouterBench paper (withheld for anonymous review).
+- [TwinRouterBench paper](https://arxiv.org/abs/2605.18859).

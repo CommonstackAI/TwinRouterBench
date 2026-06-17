@@ -2,11 +2,11 @@
 
 > 英文版：[blog_intro.md](blog_intro.md)。
 
-TwinRouterBench 的**静态 track**是离线的：它给 router 一份 970 行的对话前缀题库，router 返回 0–3 档位 id，然后我们把预测和金标档位比一下。这对训练 router 和离线研究都有用，但它回答不了生产审阅会议上那个每次都要问的问题：
+[CommonRouterBench](https://github.com/CommonRouterBench/CommonRouterBench) 是静态的：它给 router 一份 970 行的对话前缀题库，router 返回 0–3 档位 id，然后我们把预测和金标档位比一下。这对训练 router 和离线研究都有用，但它回答不了生产评审会议上那个每次都要问的问题：
 
 > "这个 router 上 SWE-bench Verified 跑一遍，到底能修几个 bug、花掉多少真实美金？"
 
-**动态 track**就是来回答这个问题的，它是静态 track 在 SWE-bench 上的端到端版本。
+**SWERouterBench** 就是来回答这个问题的，它是 CommonRouterBench 的动态姊妹包。
 
 ## 它是什么
 
@@ -38,9 +38,9 @@ failed_instance_bill = Σ router_actual_cost_i  +  Σ baseline_high_cost_i
 - **不允许自定义定价**：官方池与价格写死在 `data/model_pool.json` / `data/model_pricing.json`，每次 run 留下 `pricing_fingerprint`；提交 leaderboard 的 run 会由 maintainer 按官方价格**在我们机器上重跑**验证后才上榜。
 - **不是训练数据集**：trace 是每次 run 的**产物**、`.gitignore` 掉，归跑的人所有。
 
-## 与静态 track 的关系
+## 与 CommonRouterBench 的关系
 
-| 维度 | 静态 track | 动态 track |
+| 维度 | CommonRouterBench | SWERouterBench |
 |---|---|---|
 | 形态 | 静态 970 行题库 | 动态，500 SWE-bench Verified 实例 |
 | Router 输出 | 档位 id 0–3 | 锁定池内具体 `model_id` |
@@ -49,9 +49,9 @@ failed_instance_bill = Σ router_actual_cost_i  +  Σ baseline_high_cost_i
 | Cache 模型 | 步距 TTL=3 | Wall-clock TTL=300s |
 | 头条指标 | `scores_v2.combined_score`（4 维平均） | `total_leaderboard_bill_usd`（惩罚计入后的总账单，USD） |
 | 重依赖 | 无 | `swebench` + `docker` |
-| PyPI | base 安装 | `[dynamic]` optional extra |
+| PyPI | `CommonRouterBench` | `SWERouterBench`（依赖 `CommonRouterBench`） |
 
-静态 track 告诉你"每一步**应该**是哪个档位"，动态 track 告诉你"你当时决定错了**实际要付多少钱**"。
+CRB 告诉你"每一步**应该**是哪个档位"，SWERouterBench 告诉你"你当时决定错了**实际要付多少钱**"。
 
 ## 路线图
 

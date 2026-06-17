@@ -1,12 +1,12 @@
 # SWERouterBench 架构设计（内部）
 
-> 读者：TwinRouterBench 内部开发者。对外（README / blog）以英文为准。
+> 读者：SWERouterBench / CommonRouterBench 内部开发者。对外（README / blog）以英文为准。
 
 ## 1. 项目定位
 
-TwinRouterBench 将**静态 track**与**动态 track**合并在同一源码树中，通过 `twinrouterbench static|dynamic|swe` 分发。
+SWERouterBench 是 CommonRouterBench 的**动态姊妹包**。同一个 monorepo / workspace 下，两者共存但**独立发 GitHub repo、独立发 PyPI**。
 
-| 维度 | 静态 track | 动态 track |
+| 维度 | CommonRouterBench (CRB) | SWERouterBench (本项目) |
 |---|---|---|
 | 评测对象 | 静态题库 `data/static/question_bank.jsonl`，路由监督步骤 | 动态，真跑 SWE-bench Verified 500 个 instance |
 | Router 契约 | `f(row) -> tier_id ∈ {0,1,2,3}` | `router.select(ctx) -> RouterDecision(model_id)` |
@@ -15,9 +15,9 @@ TwinRouterBench 将**静态 track**与**动态 track**合并在同一源码树�
 | Pass 判据 | `pred_tier_id >= gold_tier_id` | SWE-bench 官方 `resolved`（FAIL_TO_PASS + PASS_TO_PASS） |
 | 打分 | `scores_v2.combined_score`（4 项平均） | **单一指标** `total_leaderboard_bill_usd`（越低越好） |
 | 重依赖 | `requests + tiktoken + tokenizers` | 上面 + `swebench + docker` |
-| 发布包 | PyPI `twinrouterbench` base | `[dynamic]` optional extra |
+| 发布包 | PyPI `CommonRouterBench`，import `main` | PyPI `SWERouterBench`，import `swerouter` |
 
-两者共享 `main.tokenizer`、`main.router_llm` 等基建。
+两者**通过 PyPI 依赖衔接**：`SWERouterBench.pyproject.toml` 里 `dependencies = ["CommonRouterBench>=0.1.0", ...]`，复用 `main.tokenizer`、`main.router_llm` 等基建。
 
 ## 2. SWE-bench 集成方式：Clean dep（不 vendor）
 
