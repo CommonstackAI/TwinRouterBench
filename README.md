@@ -346,7 +346,7 @@ Under `TwinRouterBench/scripts/examples/`:
 
 ## Citation
 
-If you use Twin Router Bench in research, please cite the associated paper. **Bibliographic details are withheld for anonymous review** and will be added after publication (no preprint URL in this release). The bundled `twinrouterbench.pdf` is an anonymized copy with author metadata and identifying references removed.
+If you use Twin Router Bench in research, please cite the associated paper. **Bibliographic details are withheld for anonymous review** and will be added after publication (no preprint URL in this release).
 
 
 ## Implementation note (CLI forwarding)
