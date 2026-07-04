@@ -9,6 +9,8 @@ It contains **two tracks** inside the same product—same protocol and locked ta
 | **Static** | Fast validation on a fixed supervision bank (tier labels + nominal cost metrics). | `twinrouterbench static …` |
 | **Dynamic** | End-to-end evaluation on **SWE-bench Verified** with real tool use—**mini-swe-agent** scaffold or **editor** scaffold. | `twinrouterbench dynamic …` / `twinrouterbench swe …` |
 
+**Dataset on Hugging Face:** [Amorph/TwinRouterBench](https://huggingface.co/datasets/Amorph/TwinRouterBench)
+
 ---
 
 ## Where to run commands (important)
