@@ -1,21 +1,20 @@
 """Prompt templates used by :class:`MiniRouterAgent`.
 
-The strings below are taken verbatim (2026-04 snapshot) from
-mini-swe-agent's official benchmark config
-``minisweagent/config/benchmarks/swebench.yaml``. Keeping the templates
-aligned with upstream is important: the whole point of MiniSWERouterBench
-is that routed runs can be directly compared against the plain
-mini-swe-agent SWE-bench baseline, which is only meaningful when the
+The strings below are taken verbatim from mini-swe-agent 2.2.8's official
+benchmark config ``minisweagent/config/benchmarks/swebench.yaml``. Keeping
+the templates aligned with upstream is important: the whole point of
+MiniSWERouterBench is that routed runs can be directly compared against the
+plain mini-swe-agent SWE-bench baseline, which is only meaningful when the
 agent sees the same system / instance / observation text.
 
-If mini-swe-agent updates these templates, we refresh this module and
-bump :data:`MINI_SWEBENCH_TEMPLATE_REVISION` in the same commit.
+If mini-swe-agent updates these templates, we refresh this module and bump
+:data:`MINI_SWEBENCH_TEMPLATE_REVISION` in the same commit.
 
-Upstream source:
-https://github.com/SWE-agent/mini-swe-agent/blob/main/src/minisweagent/config/benchmarks/swebench.yaml
+Upstream source (2.2.8):
+``minisweagent/config/benchmarks/swebench.yaml``
 """
 
-MINI_SWEBENCH_TEMPLATE_REVISION = "2026-04-18 snapshot of swebench.yaml"
+MINI_SWEBENCH_TEMPLATE_REVISION = "2.2.8 swebench.yaml"
 
 
 SYSTEM_TEMPLATE = (
@@ -29,7 +28,6 @@ Consider the following PR description:
 {{task}}
 </pr_description>
 
-
 <instructions>
 # Task Instructions
 
@@ -38,7 +36,7 @@ Consider the following PR description:
 You're a software engineer interacting continuously with a computer by submitting commands.
 You'll be helping implement necessary changes to meet requirements in the PR description.
 Your task is specifically to make changes to non-test files in the current directory in order to fix the issue described in the PR description in a way that is general and consistent with the codebase.
-This is an interactive process where you will think and issue AT LEAST ONE command, see the result, then think and issue your next command(s). 
+<IMPORTANT>This is an interactive process where you will think and issue AT LEAST ONE command, see the result, then think and issue your next command(s).</important>
 
 For each response:
 
@@ -104,7 +102,7 @@ Step 1: Create the patch file
 Run `git diff -- path/to/file1 path/to/file2 > patch.txt` listing only the source files you modified.
 Do NOT commit your changes.
 
-<patch_contents>
+<IMPORTANT>
 The patch must only contain changes to the specific source files you modified to fix the issue.
 Do not submit file creations or changes to any of the following files:
 
@@ -112,7 +110,7 @@ Do not submit file creations or changes to any of the following files:
 - helper scripts, tests, or tools that you created
 - installation, build, packaging, configuration, or setup scripts unless they are directly part of the issue you were fixing (you can assume that the environment is already set up for your client)
 - binary or compiled files
-</patch_contents>
+</IMPORTANT>
 
 Step 2: Verify your patch
 Inspect patch.txt to confirm it only contains your intended changes and headers show `--- a/` and `+++ b/` paths.
@@ -120,24 +118,24 @@ Inspect patch.txt to confirm it only contains your intended changes and headers 
 Step 3: Submit (EXACT command required)
 You MUST use this EXACT command to submit:
 
-   ```bash
-   echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT && cat patch.txt
-   ```
+```bash
+echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT && cat patch.txt
+```
 
 If the command fails (nonzero exit status), it will not submit.
 
-<submission_rules>
+<CRITICAL>
 - Creating/viewing the patch and submitting it MUST be separate commands (not combined with &&).
 - If you modify patch.txt after verifying, you SHOULD verify again before submitting.
 - You CANNOT continue working (reading, editing, testing) in any way on this task after submitting.
-</submission_rules>
+</CRITICAL>
 </instructions>
 """
 
 
 OBSERVATION_TEMPLATE = (
     "{% if output.exception_info -%}\n"
-    "<exception_info>\n{{output.exception_info}}\n</exception_info>\n"
+    "<exception>{{output.exception_info}}</exception>\n"
     "{% endif -%}\n"
     "<returncode>{{output.returncode}}</returncode>\n"
     "{% if output.output | length < 10000 -%}\n"

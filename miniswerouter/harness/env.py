@@ -15,8 +15,9 @@ mini's exact command-execution contract so an unmodified ``DefaultAgent``
 and ``LitellmModel`` observation template can drive our env without any
 template tweaks. In particular we mirror:
 
-* ``bash -lc <command>`` as the interpreter (mini's default), so ``$PATH``
-  and conda activation scripts from the SWE-bench image are respected.
+* ``bash -c <command>`` as the interpreter (mini's swebench.yaml 2.2.8
+  default), matching ``environment.interpreter: ["bash", "-c"]`` in the
+  official SWE-bench config.
 * The ``{"output", "returncode", "exception_info"}`` dict shape produced by
   both ``DockerEnvironment.execute`` and ``LocalEnvironment.execute``; this
   is what mini's ``observation_template`` renders with ``StrictUndefined``.
@@ -86,8 +87,8 @@ class SwebenchContainerEnv:
     The caller is responsible for the container lifecycle — instantiate
     :class:`SwebenchContainerHandle`, ``start()`` it, pass it here, then
     ``stop()`` after the agent's ``run()`` returns. We don't own the handle
-    because :mod:`miniswerouter.harness.run_instance` needs it alive after
-    the agent exits (to run ``extract_git_diff``).
+    because :mod:`miniswerouter.harness.run_instance` may need the handle
+    for other post-run work while the container is still up.
     """
 
     def __init__(
