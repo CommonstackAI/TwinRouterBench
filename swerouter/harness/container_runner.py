@@ -19,6 +19,7 @@ module.
 from __future__ import annotations
 
 import json
+import inspect
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -74,9 +75,20 @@ def make_test_spec_for_instance(
     official evaluator. ``image_namespace`` pulls pre-built images from Docker
     Hub when set (saves the multi-hour local rebuild path)."""
 
-    from swebench.harness.test_spec.test_spec import make_test_spec
+    try:
+        from swebench.harness.test_spec.test_spec import make_test_spec
+    except ModuleNotFoundError as exc:
+        if exc.name != "swebench.harness.test_spec.test_spec":
+            raise
+        from swebench.harness.test_spec import make_test_spec
 
-    return make_test_spec(instance, namespace=image_namespace)
+    make_test_spec_params = inspect.signature(make_test_spec).parameters
+    if (
+        "namespace" in make_test_spec_params
+        or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in make_test_spec_params.values())
+    ):
+        return make_test_spec(instance, namespace=image_namespace)
+    return make_test_spec(instance)
 
 
 # ---------------------------------------------------------------------------
@@ -307,6 +319,54 @@ def _ingest_report_json(report_path: Path, instance_id: str) -> EvalReport:
     )
 
 
+def _copy_to_container_posix(container: Any, src: Path, dst: Any) -> None:
+    """Copy ``src`` to a POSIX path inside ``container``.
+
+    SWE-bench 2.x calls ``Path("/eval.sh")`` inside the official evaluator.
+    On Windows that becomes a local ``WindowsPath("\\eval.sh")`` and the
+    upstream copier tries to pass a backslash-only path to ``mkdir -p`` in the
+    Linux container. Keep this compatibility shim local to our harness instead
+    of patching site-packages.
+    """
+
+    import io
+    import posixpath
+    import shlex
+    import tarfile
+
+    src_path = Path(src)
+    dst_path = str(dst).replace("\\", "/")
+    parent = posixpath.dirname(dst_path)
+    basename = posixpath.basename(dst_path)
+    if not parent or not basename:
+        raise ValueError(f"destination path must be an absolute file path: {dst!r}")
+
+    if parent != "/":
+        mkdir_cmd = f"mkdir -p {shlex.quote(parent)}"
+        res = container.exec_run(["/bin/sh", "-lc", mkdir_cmd])
+        if int(getattr(res, "exit_code", 1) or 0) != 0:
+            out = getattr(res, "output", b"")
+            if isinstance(out, bytes):
+                out = out.decode("utf-8", errors="replace")
+            raise RuntimeError(f"failed to create container directory {parent}: {out}")
+
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w") as tar:
+        if basename.endswith(".sh"):
+            data = src_path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+            info = tarfile.TarInfo(name=basename)
+            stat = src_path.stat()
+            info.size = len(data)
+            info.mode = stat.st_mode
+            info.mtime = stat.st_mtime
+            tar.addfile(info, io.BytesIO(data))
+        else:
+            tar.add(src_path, arcname=basename)
+    buf.seek(0)
+    if not container.put_archive(parent, buf.read()):
+        raise RuntimeError(f"failed to copy {src_path} to container path {dst_path}")
+
+
 def run_upstream_eval(
     *,
     test_spec: Any,
@@ -330,7 +390,9 @@ def run_upstream_eval(
     """
 
     from swebench.harness.constants import LOG_REPORT, RUN_EVALUATION_LOG_DIR
-    from swebench.harness.run_evaluation import run_instance as upstream_run_instance
+    import swebench.harness.run_evaluation as run_evaluation_module
+
+    upstream_run_instance = run_evaluation_module.run_instance
 
     if not patch_text.strip():
         return EvalReport(
@@ -352,17 +414,21 @@ def run_upstream_eval(
     report_path = (
         Path(RUN_EVALUATION_LOG_DIR) / run_id / model_name / instance_id / LOG_REPORT
     )
+    kwargs = {
+        "test_spec": test_spec,
+        "pred": pred,
+        "rm_image": rm_image,
+        "force_rebuild": False,
+        "client": client,
+        "run_id": run_id,
+        "timeout": timeout_sec,
+    }
+    if "rewrite_reports" in inspect.signature(upstream_run_instance).parameters:
+        kwargs["rewrite_reports"] = False
+    original_copy_to_container = getattr(run_evaluation_module, "copy_to_container", None)
+    run_evaluation_module.copy_to_container = _copy_to_container_posix
     try:
-        upstream_run_instance(
-            test_spec=test_spec,
-            pred=pred,
-            rm_image=rm_image,
-            force_rebuild=False,
-            client=client,
-            run_id=run_id,
-            timeout=timeout_sec,
-            rewrite_reports=False,
-        )
+        upstream_run_instance(**kwargs)
     except Exception as ex:
         return EvalReport(
             resolved=False,
@@ -370,6 +436,9 @@ def run_upstream_eval(
             report_path=report_path,
             error=f"{type(ex).__name__}: {ex}",
         )
+    finally:
+        if original_copy_to_container is not None:
+            run_evaluation_module.copy_to_container = original_copy_to_container
     return _ingest_report_json(report_path, instance_id)
 
 

@@ -243,6 +243,36 @@ twinrouterbench dynamic run \
 
 Adjust `question_bank_path` if your bank lives elsewhere.
 
+### Example — VerificationMenuRouter baseline
+
+This deterministic baseline maps prefix risk signals to a service menu
+(`cheap_execute`, `standard_execute`, `verify_sensitive`,
+`escalate_frontier`) and then to the locked tier-to-model map. It does not
+make extra verifier calls. The optional `risk_profile` argument accepts
+`cheap`, `balanced` (default), or `conservative`, and the trace rationale
+records the selected service menu plus feature and hard-floor diagnostics.
+
+Static evaluation from the checkout root:
+
+```bash
+python scripts/evaluate_verification_menu_static.py
+```
+
+Dynamic smoke from the checkout parent directory:
+
+```bash
+twinrouterbench dynamic run \
+  --router-import swerouter.routers.verification_menu:VerificationMenuRouter.from_cli_args \
+  --router-arg tier_to_model_path=TwinRouterBench/data/dynamic/tier_to_model.json \
+  --router-arg label=verification_menu \
+  --router-arg risk_profile=balanced \
+  --router-label verification_menu \
+  --output-dir runs/verification_menu_smoke \
+  --instances django__django-11133 \
+  --workers 1 \
+  --max-steps 60 --budget-usd 3 --run-id verification_menu_smoke --force-rerun
+```
+
 ### Example — Semantic Router **SR KNN** router
 
 Requires `semantic-router/` at the checkout parent directory and CPU/GPU for embeddings (`embedding_device`).

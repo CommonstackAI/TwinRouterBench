@@ -69,6 +69,10 @@ DEFAULT_POOL = _LOCKED_DATA / "model_pool.json"
 DEFAULT_PRICING = _LOCKED_DATA / "model_pricing.json"
 DEFAULT_TTL = _LOCKED_DATA / "ttl_policy.json"
 DEFAULT_TIER_MAP = _LOCKED_DATA / "tier_to_model.json"
+FALLBACK_DIFF_EXCLUDE_PATHS = (
+    "patch.txt",
+    "reproduce*.py",
+)
 
 
 def _recover_agent_metrics_from_trace(trace_path: Path) -> dict[str, Any] | None:
@@ -420,12 +424,14 @@ def run_instance(request: RunInstanceRequest) -> InstanceResult:
             # protocol writes (see the SYSTEM/INSTANCE templates: the agent
             # runs ``git diff -- ... > patch.txt`` before echoing the
             # sentinel). Exclude it from the fallback diff so half-completed
-            # submissions don't leak plumbing into the captured patch.
+            # submissions don't leak plumbing into the captured patch. The
+            # prompt also encourages temporary reproduce scripts; exclude
+            # those scratch files when we fall back after a budget/step cap.
             if submission.strip():
                 patch_text = submission
             else:
                 patch_text = extract_git_diff(
-                    handle.container, exclude_paths=("patch.txt",)
+                    handle.container, exclude_paths=FALLBACK_DIFF_EXCLUDE_PATHS
                 )
         except Exception as ex:
             agent_error = f"{type(ex).__name__}: {ex}"
@@ -434,7 +440,7 @@ def run_instance(request: RunInstanceRequest) -> InstanceResult:
             if handle.container is not None:
                 try:
                     patch_text = extract_git_diff(
-                        handle.container, exclude_paths=("patch.txt",)
+                        handle.container, exclude_paths=FALLBACK_DIFF_EXCLUDE_PATHS
                     )
                 except Exception:  # noqa: BLE001
                     patch_text = ""

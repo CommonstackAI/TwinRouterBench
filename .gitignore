@@ -1,5 +1,6 @@
 .env
 .env.local
+.venv/
 *.pyc
 __pycache__/
 .pytest_cache/
@@ -9,4 +10,5 @@ build/
 .ruff_cache/
 .mypy_cache/
 runs/
+logs/
 *.log
