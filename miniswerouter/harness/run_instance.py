@@ -13,9 +13,9 @@ the editor-scaffold agent loop for mini-swe-agent's ``DefaultAgent`` +
 4. ``agent.run(task=problem_statement)`` -- mini's scaffold drives bash-only
    steps until ``COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`` or ``step_limit`` /
    ``cost_limit`` fires.
-5. Prefer mini's own ``submission`` (the text emitted after the sentinel) as
-   the patch; fall back to ``extract_git_diff`` on the container so budget
-   overruns still get graded on whatever changes were made.
+5. Use mini's ``submission`` (the text emitted after the sentinel) as the
+   patch, matching official ``minisweagent.run.benchmarks.swebench`` (empty
+   when the agent exits without submitting).
 6. Hand the patch to upstream's official evaluator via
    :func:`swerouter.harness.container_runner.run_upstream_eval`.
 """
@@ -35,7 +35,6 @@ from swerouter.harness.container_runner import (
     DEFAULT_EVAL_MODEL_NAME,
     DEFAULT_IMAGE_NAMESPACE,
     SwebenchContainerHandle,
-    extract_git_diff,
     load_dataset_instance,
     make_test_spec_for_instance,
     run_upstream_eval,
@@ -414,30 +413,10 @@ def run_instance(request: RunInstanceRequest) -> InstanceResult:
                 else "unknown"
             )
 
-            # Prefer mini's own submission; fall back to whole-repo git diff
-            # if the agent exited without submitting (budget/step cap).
-            # ``patch.txt`` is the intermediate file mini's submission
-            # protocol writes (see the SYSTEM/INSTANCE templates: the agent
-            # runs ``git diff -- ... > patch.txt`` before echoing the
-            # sentinel). Exclude it from the fallback diff so half-completed
-            # submissions don't leak plumbing into the captured patch.
-            if submission.strip():
-                patch_text = submission
-            else:
-                patch_text = extract_git_diff(
-                    handle.container, exclude_paths=("patch.txt",)
-                )
+            patch_text = submission
         except Exception as ex:
             agent_error = f"{type(ex).__name__}: {ex}"
-            # Best-effort fallback: if we already entered the container, try
-            # to capture any changes the agent made before crashing.
-            if handle.container is not None:
-                try:
-                    patch_text = extract_git_diff(
-                        handle.container, exclude_paths=("patch.txt",)
-                    )
-                except Exception:  # noqa: BLE001
-                    patch_text = ""
+            patch_text = ""
     finally:
         handle.stop()
 
