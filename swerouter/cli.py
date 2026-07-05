@@ -216,6 +216,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
         run_id=args.run_id,
         force_rerun=args.force_rerun,
         rm_image=args.rm_image,
+        windows_compat=args.windows_compat,
     )
     summary = run_eval(req, router_label=args.router_label)
     print(
@@ -423,6 +424,11 @@ def _build_parser() -> argparse.ArgumentParser:
     run.add_argument("--run-id", default="swerouter_default")
     run.add_argument("--force-rerun", action="store_true")
     run.add_argument("--rm-image", action="store_true")
+    run.add_argument(
+        "--windows-compat",
+        action="store_true",
+        help="Opt in to Windows-local SWE-bench compatibility shims. Linux/default behavior is unchanged when unset.",
+    )
     run.set_defaults(func=_cmd_run)
 
     score = sub.add_parser("score", help="Score an existing run directory.")

@@ -263,6 +263,7 @@ class RunInstanceRequest:
     force_rebuild: bool = False
     rm_image: bool = False
     image_namespace: str | None = DEFAULT_IMAGE_NAMESPACE
+    windows_compat: bool = False
     # Extra litellm model_kwargs forwarded to every pool member's LitellmModel.
     # Callers typically leave this empty; mini's canonical defaults
     # (``drop_params=True, temperature=0.0, parallel_tool_calls=True``) are
@@ -354,7 +355,9 @@ def run_instance(request: RunInstanceRequest) -> InstanceResult:
         dataset_split=request.dataset_split,
     )
     test_spec = make_test_spec_for_instance(
-        instance, image_namespace=request.image_namespace
+        instance,
+        image_namespace=request.image_namespace,
+        windows_compat=request.windows_compat,
     )
 
     handle = SwebenchContainerHandle(
@@ -428,6 +431,7 @@ def run_instance(request: RunInstanceRequest) -> InstanceResult:
         timeout_sec=request.eval_timeout_sec,
         rm_image=request.rm_image,
         model_name=MINI_EVAL_MODEL_NAME,
+        windows_compat=request.windows_compat,
     )
 
     if agent_error is not None:
