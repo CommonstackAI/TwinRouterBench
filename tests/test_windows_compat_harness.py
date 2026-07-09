@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import sys
 import tarfile
+import threading
 import types
 from typing import Any, Callable
 
@@ -132,6 +133,85 @@ def test_windows_eval_path_patches_and_restores_copy_to_container(monkeypatch: A
     assert calls[0]["rewrite_reports"] is False
     assert module_box["module"].copy_to_container is original_copy
     assert report.error and "eval report not produced" in report.error
+
+
+def test_windows_eval_path_serializes_temporary_copy_patch(
+    monkeypatch: Any,
+    tmp_path: Any,
+) -> None:
+    calls: list[dict[str, Any]] = []
+    entered = 0
+    lock = threading.Lock()
+    first_inside = threading.Event()
+    release_first = threading.Event()
+    second_thread_started = threading.Event()
+    second_started = threading.Event()
+    thread_errors: list[BaseException] = []
+    original_copy = object()
+    module_box: dict[str, types.ModuleType] = {}
+
+    def run_instance(**kwargs: Any) -> None:
+        nonlocal entered
+        with lock:
+            entered += 1
+            call_index = entered
+        calls.append(kwargs)
+        assert (
+            module_box["module"].copy_to_container
+            is container_runner._copy_to_container_posix
+        )
+        if call_index == 1:
+            first_inside.set()
+            assert release_first.wait(timeout=5)
+        else:
+            second_started.set()
+
+    module_box["module"] = _install_eval_modules(
+        monkeypatch,
+        tmp_path,
+        run_instance,
+        copy_to_container=original_copy,
+    )
+
+    def run_eval_thread(*, started: threading.Event | None = None) -> None:
+        if started is not None:
+            started.set()
+        try:
+            container_runner.run_upstream_eval(
+                test_spec=object(),
+                instance_id="example__repo-1",
+                patch_text="diff --git a/file.py b/file.py\n",
+                run_id="windows_eval",
+                client=object(),
+                windows_compat=True,
+            )
+        except BaseException as ex:  # noqa: BLE001 - re-raised in main test thread
+            thread_errors.append(ex)
+
+    t1 = threading.Thread(target=run_eval_thread)
+    t2 = threading.Thread(
+        target=run_eval_thread,
+        kwargs={"started": second_thread_started},
+    )
+    t1.start()
+    assert first_inside.wait(timeout=5)
+    t2.start()
+    assert second_thread_started.wait(timeout=5)
+
+    # If the monkeypatch were not serialized, the second call could enter
+    # while the first still owns the temporary module mutation.
+    assert not second_started.wait(timeout=0.2)
+    release_first.set()
+    t1.join(timeout=5)
+    t2.join(timeout=5)
+
+    if thread_errors:
+        raise thread_errors[0]
+    assert not t1.is_alive()
+    assert not t2.is_alive()
+    assert len(calls) == 2
+    assert second_started.is_set()
+    assert module_box["module"].copy_to_container is original_copy
 
 
 def test_windows_copy_shim_uses_posix_container_paths(tmp_path: Any) -> None:

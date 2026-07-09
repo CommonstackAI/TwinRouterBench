@@ -19,6 +19,7 @@ module.
 from __future__ import annotations
 
 import json
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -34,6 +35,12 @@ DEFAULT_IMAGE_NAMESPACE: str | None = "swebench"
 # ``swebench.harness.run_evaluation``. Upstream uses it as the sub-directory
 # under ``logs/run_evaluation/<run_id>/<model_name>/<instance_id>/``.
 DEFAULT_EVAL_MODEL_NAME = "swerouterbench"
+
+# The Windows compatibility path temporarily monkeypatches upstream
+# swebench.harness.run_evaluation.copy_to_container. Keep that mutation
+# process-local and serialized so concurrent workers cannot restore each
+# other's patch while an eval is still running.
+_WINDOWS_COMPAT_EVAL_LOCK = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
@@ -484,18 +491,19 @@ def _run_upstream_eval_windows_compat(
     ):
         kwargs["rewrite_reports"] = False
 
-    sentinel = object()
-    original_copy_to_container = getattr(
-        run_evaluation_module, "copy_to_container", sentinel
-    )
-    run_evaluation_module.copy_to_container = _copy_to_container_posix
-    try:
-        upstream_run_instance(**kwargs)
-    finally:
-        if original_copy_to_container is sentinel:
-            delattr(run_evaluation_module, "copy_to_container")
-        else:
-            run_evaluation_module.copy_to_container = original_copy_to_container
+    with _WINDOWS_COMPAT_EVAL_LOCK:
+        sentinel = object()
+        original_copy_to_container = getattr(
+            run_evaluation_module, "copy_to_container", sentinel
+        )
+        run_evaluation_module.copy_to_container = _copy_to_container_posix
+        try:
+            upstream_run_instance(**kwargs)
+        finally:
+            if original_copy_to_container is sentinel:
+                delattr(run_evaluation_module, "copy_to_container")
+            else:
+                run_evaluation_module.copy_to_container = original_copy_to_container
 
 
 __all__ = [
