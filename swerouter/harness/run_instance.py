@@ -109,6 +109,7 @@ class RunInstanceRequest:
     # pre-built instance images from Docker Hub under that namespace (the
     # official registry is ``swebench``). Avoids multi-hour local rebuilds.
     image_namespace: str | None = DEFAULT_IMAGE_NAMESPACE
+    windows_compat: bool = False
 
 
 @dataclass
@@ -310,7 +311,9 @@ def run_instance(request: RunInstanceRequest) -> InstanceResult:
         dataset_split=request.dataset_split,
     )
     test_spec = make_test_spec_for_instance(
-        instance, image_namespace=request.image_namespace
+        instance,
+        image_namespace=request.image_namespace,
+        windows_compat=request.windows_compat,
     )
 
     llm = LLMClient(
@@ -371,6 +374,7 @@ def run_instance(request: RunInstanceRequest) -> InstanceResult:
         timeout_sec=request.eval_timeout_sec,
         rm_image=request.rm_image,
         model_name=DEFAULT_EVAL_MODEL_NAME,
+        windows_compat=request.windows_compat,
     )
 
     if agent_summary is not None:

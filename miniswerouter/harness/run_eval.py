@@ -69,6 +69,7 @@ class EvalRequest:
     force_rerun: bool = False
     rm_image: bool = False
     image_namespace: str | None = "swebench"
+    windows_compat: bool = False
 
 
 @dataclass
@@ -232,6 +233,7 @@ def run_eval(request: EvalRequest, *, router_label: str) -> EvalSummary:
             run_id=request.run_id,
             rm_image=request.rm_image,
             image_namespace=request.image_namespace,
+            windows_compat=request.windows_compat,
         )
         return run_instance(req)
 

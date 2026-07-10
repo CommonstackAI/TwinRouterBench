@@ -231,6 +231,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
         run_id=args.run_id,
         force_rerun=args.force_rerun,
         rm_image=args.rm_image,
+        windows_compat=args.windows_compat,
         pool_path=Path(args.pool) if args.pool else DEFAULT_POOL,
         pricing_path=Path(args.pricing) if args.pricing else DEFAULT_PRICING,
         ttl_path=Path(args.ttl) if args.ttl else DEFAULT_TTL,
@@ -459,6 +460,11 @@ def _build_parser() -> argparse.ArgumentParser:
     run.add_argument("--run-id", default="miniswerouter_default")
     run.add_argument("--force-rerun", action="store_true")
     run.add_argument("--rm-image", action="store_true")
+    run.add_argument(
+        "--windows-compat",
+        action="store_true",
+        help="Opt in to Windows-local SWE-bench compatibility shims. Linux/default behavior is unchanged when unset.",
+    )
     run.add_argument(
         "--pool",
         default=None,

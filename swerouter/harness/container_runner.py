@@ -69,14 +69,33 @@ def make_test_spec_for_instance(
     instance: dict[str, Any],
     *,
     image_namespace: str | None = DEFAULT_IMAGE_NAMESPACE,
+    windows_compat: bool = False,
 ) -> Any:
     """Build the upstream ``TestSpec`` used by the container builder and the
     official evaluator. ``image_namespace`` pulls pre-built images from Docker
     Hub when set (saves the multi-hour local rebuild path)."""
 
-    from swebench.harness.test_spec.test_spec import make_test_spec
+    if not windows_compat:
+        from swebench.harness.test_spec.test_spec import make_test_spec
 
-    return make_test_spec(instance, namespace=image_namespace)
+        return make_test_spec(instance, namespace=image_namespace)
+
+    import inspect
+
+    try:
+        from swebench.harness.test_spec.test_spec import make_test_spec
+    except ModuleNotFoundError as exc:
+        if exc.name != "swebench.harness.test_spec.test_spec":
+            raise
+        from swebench.harness.test_spec import make_test_spec
+
+    make_test_spec_params = inspect.signature(make_test_spec).parameters
+    if (
+        "namespace" in make_test_spec_params
+        or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in make_test_spec_params.values())
+    ):
+        return make_test_spec(instance, namespace=image_namespace)
+    return make_test_spec(instance)
 
 
 # ---------------------------------------------------------------------------
@@ -307,6 +326,53 @@ def _ingest_report_json(report_path: Path, instance_id: str) -> EvalReport:
     )
 
 
+def _copy_to_container_posix(container: Any, src: Path, dst: Any) -> None:
+    """Copy ``src`` to a POSIX path inside ``container``.
+
+    SWE-bench may pass ``Path("/eval.sh")`` to its copy helper. On Windows
+    that can become ``WindowsPath("\\eval.sh")`` before reaching the Linux
+    container. This shim is used only when Windows compatibility mode is
+    explicitly enabled.
+    """
+
+    import io
+    import posixpath
+    import shlex
+    import tarfile
+
+    src_path = Path(src)
+    dst_path = str(dst).replace("\\", "/")
+    parent = posixpath.dirname(dst_path)
+    basename = posixpath.basename(dst_path)
+    if not dst_path.startswith("/") or not parent or not basename:
+        raise ValueError(f"destination path must be an absolute file path: {dst!r}")
+
+    if parent != "/":
+        mkdir_cmd = f"mkdir -p {shlex.quote(parent)}"
+        res = container.exec_run(["/bin/sh", "-lc", mkdir_cmd])
+        if int(getattr(res, "exit_code", 1) or 0) != 0:
+            out = getattr(res, "output", b"")
+            if isinstance(out, bytes):
+                out = out.decode("utf-8", errors="replace")
+            raise RuntimeError(f"failed to create container directory {parent}: {out}")
+
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w") as tar:
+        if basename.endswith(".sh"):
+            data = src_path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+            info = tarfile.TarInfo(name=basename)
+            stat_result = src_path.stat()
+            info.size = len(data)
+            info.mode = stat_result.st_mode
+            info.mtime = stat_result.st_mtime
+            tar.addfile(info, io.BytesIO(data))
+        else:
+            tar.add(src_path, arcname=basename)
+    buf.seek(0)
+    if not container.put_archive(parent, buf.read()):
+        raise RuntimeError(f"failed to copy {src_path} to container path {dst_path}")
+
+
 def run_upstream_eval(
     *,
     test_spec: Any,
@@ -317,6 +383,7 @@ def run_upstream_eval(
     timeout_sec: int = 1800,
     rm_image: bool = False,
     model_name: str = DEFAULT_EVAL_MODEL_NAME,
+    windows_compat: bool = False,
 ) -> EvalReport:
     """Grade ``patch_text`` against ``instance_id`` using upstream's pipeline.
 
@@ -330,7 +397,6 @@ def run_upstream_eval(
     """
 
     from swebench.harness.constants import LOG_REPORT, RUN_EVALUATION_LOG_DIR
-    from swebench.harness.run_evaluation import run_instance as upstream_run_instance
 
     if not patch_text.strip():
         return EvalReport(
@@ -353,16 +419,30 @@ def run_upstream_eval(
         Path(RUN_EVALUATION_LOG_DIR) / run_id / model_name / instance_id / LOG_REPORT
     )
     try:
-        upstream_run_instance(
-            test_spec=test_spec,
-            pred=pred,
-            rm_image=rm_image,
-            force_rebuild=False,
-            client=client,
-            run_id=run_id,
-            timeout=timeout_sec,
-            rewrite_reports=False,
-        )
+        if windows_compat:
+            _run_upstream_eval_windows_compat(
+                test_spec=test_spec,
+                pred=pred,
+                rm_image=rm_image,
+                client=client,
+                run_id=run_id,
+                timeout_sec=timeout_sec,
+            )
+        else:
+            from swebench.harness.run_evaluation import (
+                run_instance as upstream_run_instance,
+            )
+
+            upstream_run_instance(
+                test_spec=test_spec,
+                pred=pred,
+                rm_image=rm_image,
+                force_rebuild=False,
+                client=client,
+                run_id=run_id,
+                timeout=timeout_sec,
+                rewrite_reports=False,
+            )
     except Exception as ex:
         return EvalReport(
             resolved=False,
@@ -371,6 +451,51 @@ def run_upstream_eval(
             error=f"{type(ex).__name__}: {ex}",
         )
     return _ingest_report_json(report_path, instance_id)
+
+
+def _run_upstream_eval_windows_compat(
+    *,
+    test_spec: Any,
+    pred: dict[str, str],
+    rm_image: bool,
+    client: Any,
+    run_id: str,
+    timeout_sec: int,
+) -> None:
+    """Run upstream eval with Windows-only compatibility shims enabled."""
+
+    import inspect
+    import swebench.harness.run_evaluation as run_evaluation_module
+
+    upstream_run_instance = run_evaluation_module.run_instance
+    kwargs: dict[str, Any] = {
+        "test_spec": test_spec,
+        "pred": pred,
+        "rm_image": rm_image,
+        "force_rebuild": False,
+        "client": client,
+        "run_id": run_id,
+        "timeout": timeout_sec,
+    }
+    upstream_params = inspect.signature(upstream_run_instance).parameters
+    if (
+        "rewrite_reports" in upstream_params
+        or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in upstream_params.values())
+    ):
+        kwargs["rewrite_reports"] = False
+
+    sentinel = object()
+    original_copy_to_container = getattr(
+        run_evaluation_module, "copy_to_container", sentinel
+    )
+    run_evaluation_module.copy_to_container = _copy_to_container_posix
+    try:
+        upstream_run_instance(**kwargs)
+    finally:
+        if original_copy_to_container is sentinel:
+            delattr(run_evaluation_module, "copy_to_container")
+        else:
+            run_evaluation_module.copy_to_container = original_copy_to_container
 
 
 __all__ = [
