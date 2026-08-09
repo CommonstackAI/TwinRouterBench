@@ -190,6 +190,32 @@ Other useful keys on the same summary object:
 
 This forwards to **`miniswerouter.cli`** (`run`, `score`, `audit-infra`, `audit-trace-cost`, `render`).
 
+### Paper held-out split (100 SWE-bench Verified instances)
+
+The paper’s dynamic held-out evaluation uses a fixed **100-instance** subset of **SWE-bench Verified**, disjoint from the static SWE supervision instances. The locked instance-id list is:
+
+**[`data/dynamic/dynamic_heldout100_ids.txt`](data/dynamic/dynamic_heldout100_ids.txt)** — one `instance_id` per line (18 `astropy__*`, 82 `django__*`).
+
+**Selection rule** (same as `leaderboard/data/leaderboard.json`):
+
+1. Take instance IDs present in both SR-KNN and UncommonRoute dynamic result sets.
+2. Remove all CommonRouterBench SWE static supervision instances.
+3. Sort the remaining IDs lexicographically and keep the first 100.
+
+To reproduce that split with the dynamic harness:
+
+```bash
+# run (pass IDs explicitly)
+mapfile -t HELDOUT < TwinRouterBench/data/dynamic/dynamic_heldout100_ids.txt
+twinrouterbench dynamic run ... --instances "${HELDOUT[@]}"
+
+# score an existing run on only this split
+twinrouterbench dynamic score \
+  --run-dir runs/your_run \
+  --router-label your_label \
+  --instance-ids-file TwinRouterBench/data/dynamic/dynamic_heldout100_ids.txt
+```
+
 ### `run` — main flags
 
 | Flag | Meaning |
@@ -345,7 +371,7 @@ Under `TwinRouterBench/scripts/examples/`:
 | `miniswerouter/` | Dynamic track on **mini-swe-agent**. |
 | `swerouter/` | Router protocol, pricing, cache simulation, harness, and leaderboard. |
 | `data/static/` | Static track JSONL: `question_bank.jsonl`, `manifest.json`. |
-| `data/dynamic/` | Dynamic track locked JSON: `model_pool.json`, `model_pricing.json`, `ttl_policy.json`, `tier_to_model.json`, `sr_knn_to_pool.json`, … |
+| `data/dynamic/` | Dynamic track locked JSON: `model_pool.json`, `model_pricing.json`, `ttl_policy.json`, `tier_to_model.json`, `sr_knn_to_pool.json`, plus `dynamic_heldout100_ids.txt` (paper’s 100-case SWE-bench Verified held-out split). |
 | `twinrouterbench/` | Meta-CLI dispatcher. |
 | `.env.example` | Template for gateway credentials. |
 
