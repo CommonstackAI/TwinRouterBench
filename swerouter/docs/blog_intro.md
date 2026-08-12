@@ -59,11 +59,10 @@ CRB tells you *what kind* of model each step needs. SWERouterBench tells you *wh
 The first milestone is the 0.1.0 release. Once the pipeline is cemented, the next beats are:
 
 - Publish baseline runs for the four pool models and a CRB-classifier-powered mixed router.
-- Open a submission flow (GitHub issue template + maintainer re-run).
 - Quarterly pricing refresh with a `pricing_schema_version` bump.
 - Optional extended-cache (1h) variant once community pressure for it is real.
 
-If you maintain a router and want to see it on the leaderboard, open an issue with your run artefacts and we will re-run it against the official pricing.
+If you maintain a router and want to see it on the leaderboard, read [`docs/SUBMISSION.md`](../../docs/SUBMISSION.md), then open a **Leaderboard submission** issue ([template](https://github.com/CommonstackAI/TwinRouterBench/issues/new?template=leaderboard_submission.yml)); maintainers will review and may re-run against the official pricing.
 
 ## See also
 

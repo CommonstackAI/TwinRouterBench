@@ -92,6 +92,7 @@ function renderLinks() {
   const links = state.data.links;
   const items = [
     ["About", links.github],
+    ["Submit", links.submission],
     ["Dataset", links.dataset],
     ["Manifest", links.static_manifest],
     ["Paper", links.paper],
