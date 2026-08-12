@@ -6,6 +6,7 @@
   "notice": "Public preview: 4 dynamic router runs, 100 heldout SWE-bench Verified cases, and 970 static conditional per-call labels.",
   "links": {
     "github": "https://github.com/CommonstackAI/TwinRouterBench",
+    "submission": "https://github.com/CommonstackAI/TwinRouterBench/blob/main/docs/SUBMISSION.md",
     "dataset": "https://github.com/CommonstackAI/TwinRouterBench/tree/main/data",
     "static_manifest": "https://github.com/CommonstackAI/TwinRouterBench/blob/main/data/static/manifest.json",
     "paper": "",
