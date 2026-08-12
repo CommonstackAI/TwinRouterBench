@@ -377,6 +377,21 @@ Under `TwinRouterBench/scripts/examples/`:
 
 ---
 
+## Leaderboard submission
+
+**Full rules:** [`docs/SUBMISSION.md`](docs/SUBMISSION.md)
+
+Public leaderboard: [commonstackai.github.io/TwinRouterBench](https://commonstackai.github.io/TwinRouterBench/).
+
+Short path:
+
+1. Evaluate on [`data/dynamic/dynamic_heldout100_ids.txt`](data/dynamic/dynamic_heldout100_ids.txt).
+2. Package the held-out-100 scoreable core and host it at an external URL (see the guide).
+3. Open [Leaderboard submission](https://github.com/CommonstackAI/TwinRouterBench/issues/new?template=leaderboard_submission.yml).
+
+Do **not** upload run logs to the Hugging Face dataset page.
+---
+
 ## Citation
 
 If you use Twin Router Bench in research, please cite the associated paper. **Bibliographic details are withheld for anonymous review** and will be added after publication (no preprint URL in this release).

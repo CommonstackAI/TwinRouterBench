@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Leaderboard submission guide
+    url: https://github.com/CommonstackAI/TwinRouterBench/blob/main/docs/SUBMISSION.md
+    about: Rules, required artifacts, and packaging checklist before you open a submission issue.
+  - name: Public leaderboard
+    url: https://commonstackai.github.io/TwinRouterBench/
+    about: View the current TwinRouterBench leaderboard (GitHub Pages).
+  - name: Static dataset (Hugging Face)
+    url: https://huggingface.co/datasets/Amorph/TwinRouterBench
+    about: Download the static track data. Do not upload leaderboard run logs there.

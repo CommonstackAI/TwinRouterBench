@@ -1,0 +1,178 @@
+name: Leaderboard submission
+description: Submit a dynamic-track run for maintainer review and possible leaderboard update.
+title: "[Leaderboard] "
+labels:
+  - leaderboard
+  - submission
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for submitting to **TwinRouterBench**.
+
+        **Read the rules first:** [docs/SUBMISSION.md](https://github.com/CommonstackAI/TwinRouterBench/blob/main/docs/SUBMISSION.md)
+
+        Official leaderboard entries are accepted only after maintainer review.
+        We may re-score (and, when needed, re-run) against the locked pool and pricing under `data/dynamic/`.
+
+        **Do not** upload run logs to the Hugging Face dataset page.
+        Put the scoreable artifact package on a durable public URL (or a private link shared with maintainers) and paste the link below.
+
+        Required split for dynamic submissions: [`data/dynamic/dynamic_heldout100_ids.txt`](https://github.com/CommonstackAI/TwinRouterBench/blob/main/data/dynamic/dynamic_heldout100_ids.txt) (100 SWE-bench Verified held-out instances).
+
+  - type: input
+    id: router_name
+    attributes:
+      label: Router display name
+      description: Name shown on the leaderboard if accepted.
+      placeholder: e.g. MyRouter-v1
+    validations:
+      required: true
+
+  - type: input
+    id: router_label
+    attributes:
+      label: "router_label used in the run"
+      description: "Exact --router-label / score.json field."
+      placeholder: e.g. my_router_v1
+    validations:
+      required: true
+
+  - type: dropdown
+    id: track
+    attributes:
+      label: Evaluation track
+      description: Public leaderboard currently accepts the dynamic held-out-100 track.
+      options:
+        - Dynamic SWE-bench Verified heldout-100
+        - Other (explain in notes; may be declined)
+    validations:
+      required: true
+
+  - type: input
+    id: contact
+    attributes:
+      label: Contact
+      description: GitHub handle, email, or other way for maintainers to reach you about reproduction questions.
+      placeholder: "@yourhandle or name@example.com"
+    validations:
+      required: true
+
+  - type: input
+    id: code_url
+    attributes:
+      label: Router code / paper URL
+      description: Repository, commit, or paper that defines the router. Prefer a pinned commit SHA.
+      placeholder: "https://github.com/org/repo/tree/<commit-sha>"
+    validations:
+      required: true
+
+  - type: input
+    id: twinrouterbench_ref
+    attributes:
+      label: TwinRouterBench commit / tag used for the run
+      description: Exact git commit SHA or release tag of CommonstackAI/TwinRouterBench used to produce the artifacts.
+      placeholder: e.g. abcdef0123456789...
+    validations:
+      required: true
+
+  - type: textarea
+    id: score_summary
+    attributes:
+      label: Reported score summary
+      description: "Paste headline numbers from score.json (or fill the template)."
+      value: |
+        - total_leaderboard_bill_usd:
+        - total_router_cost_usd:
+        - total_penalty_cost_usd:
+        - resolved_count / instance_count / resolved_rate:
+        - avg_steps:
+        - pool_fingerprint:
+        - pricing_fingerprint:
+        - pricing_schema_version:
+        - failure_penalty_usd:
+        - exclude_infra_failures (true/false):
+    validations:
+      required: true
+
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Artifact package URL
+      description: |
+        Host the archive externally and paste the URL here. Do not attach the
+        run package to this GitHub issue (attachments are too small; a full
+        dynamic run with llm_io can be hundreds of MB).
+
+        Required contents (held-out-100 scoreable core; typically ~5-20 MB):
+        - score.json (from twinrouterbench dynamic score)
+        - results/<instance_id>.json for all 100 held-out instances
+        - matching <instance_id>.trace.jsonl files
+        - eval_summary.json if present
+
+        Exclude from the package:
+        - llm_io/ and *.io.jsonl (full prompt/response dumps; often 100MB-500MB+)
+        - secrets (.env, API keys, tokens)
+        - unrelated instances outside dynamic_heldout100_ids.txt
+
+        agent_logs/ is optional and usually small; omit if not needed for debugging.
+      placeholder: "https://... (Zenodo / your own HF dataset / GitHub Release asset / etc.)"
+    validations:
+      required: true
+
+  - type: input
+    id: artifact_sha256
+    attributes:
+      label: Artifact archive SHA-256 (optional but recommended)
+      description: Hex digest of the uploaded archive so maintainers can verify integrity.
+      placeholder: e.g. output of sha256sum your_run_heldout100.tar.gz
+    validations:
+      required: false
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction command(s)
+      description: Exact commands a maintainer can use to re-run or re-score. Include router import path and args.
+      render: bash
+      value: |
+        mapfile -t HELDOUT < TwinRouterBench/data/dynamic/dynamic_heldout100_ids.txt
+        twinrouterbench dynamic run \
+          --router-import your.module:YourRouter.from_cli_args \
+          --router-arg ... \
+          --router-label your_label \
+          --output-dir runs/your_run \
+          --instances "${HELDOUT[@]}" \
+          ...
+
+        twinrouterbench dynamic score \
+          --run-dir runs/your_run \
+          --router-label your_label \
+          --instance-ids-file TwinRouterBench/data/dynamic/dynamic_heldout100_ids.txt
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Submission checklist
+      options:
+        - label: "Evaluated on the official held-out-100 IDs in data/dynamic/dynamic_heldout100_ids.txt (or scored with --instance-ids-file pointing at that file)."
+          required: true
+        - label: "Used the locked pool / pricing / TTL tables under data/dynamic/ (no custom pricing tables)."
+          required: true
+        - label: "Artifact package includes score.json, results/*.json, and the corresponding *.trace.jsonl files for the held-out-100 split."
+          required: true
+        - label: "Artifact package excludes llm_io/ / *.io.jsonl and contains no secrets (API keys, .env, private tokens)."
+          required: true
+        - label: "I understand maintainers may re-score or re-run before accepting the entry, and may reject submissions that cannot be reproduced."
+          required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Method summary, known infra exclusions, model-pool caveats, embargo requests, etc.
+      placeholder: Optional
+    validations:
+      required: false

@@ -57,11 +57,10 @@ CRB 告诉你"每一步**应该**是哪个档位"，SWERouterBench 告诉你"你
 
 **0.1.0 先做最小闭环**：公开 4 个 `always-*` baseline（low/mid/mid_high/high）+ ≥1 个 CRB-classifier 混合 router 的 leaderboard 结果，博客里把表贴出来。之后：
 
-- 开 submission 流程（GitHub issue 模板 + maintainer 按官方价重跑）
 - 季度 pricing 刷新（每次 diff 审后 bump `pricing_schema_version`）
 - 视社区诉求增加 1h extended-cache 变体
 
-维护 router 的同学如果想上榜，开一个 issue 附上 run artefacts 即可，我们会按官方价重跑。
+维护 router 的同学如果想上榜，先读 [`docs/SUBMISSION.md`](../../docs/SUBMISSION.md)，再用 **Leaderboard submission** Issue 模板（[打开模板](https://github.com/CommonstackAI/TwinRouterBench/issues/new?template=leaderboard_submission.yml)）提交；我们会审核，并可能按官方价重跑后再更新榜单。
 
 ## 相关链接
 
