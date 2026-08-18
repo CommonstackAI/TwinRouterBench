@@ -5,11 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "twinrouterbench"
 version = "0.1.0"
-description = "Twin Router Bench: unified static and dynamic per-step router benchmarks (one suite, one install path)."
+description = "TwinRouterBench: static supervision and live evaluation for per-step LLM routing."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
-authors = [{ name = "Twin Router Bench contributors" }]
+authors = [{ name = "TwinRouterBench contributors" }]
 keywords = ["llm", "router", "benchmark", "swe-bench", "routing"]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -34,10 +34,12 @@ dynamic = [
   "litellm>=1.50.0",
 ]
 
-# Omitted for anonymous review (restore public repo URLs after acceptance).
-# [project.urls]
-# Homepage = "https://github.com/ORG/TwinRouterBench"
-# Repository = "https://github.com/ORG/TwinRouterBench"
+[project.urls]
+Homepage = "https://commonstackai.github.io/TwinRouterBench/"
+Repository = "https://github.com/CommonstackAI/TwinRouterBench"
+Paper = "https://arxiv.org/abs/2605.18859"
+Dataset = "https://huggingface.co/datasets/Amorph/TwinRouterBench"
+Leaderboard = "https://commonstackai.github.io/TwinRouterBench/"
 
 [project.scripts]
 twinrouterbench = "twinrouterbench.cli:main"
@@ -60,3 +62,11 @@ main = [
   "tokenizer_data/*.json",
 ]
 swerouter = ["../data/dynamic/*.json"]
+twinrouterbench = [
+  "data_generation/*.json",
+  "data_generation/fixtures/*.json",
+  "data_generation/prompts/*.txt",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

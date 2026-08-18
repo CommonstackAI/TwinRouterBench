@@ -1,0 +1,48 @@
+{
+  "schema": "twinrouterbench.data_pipeline.v1",
+  "suite_version": "custom-qa-example-v1",
+  "generation": {
+    "run_id": "custom-qa-config-only",
+    "backend_name": "mock",
+    "review_rate": 0,
+    "cascade_size": 1,
+    "collector": "config-only-example",
+    "collected_at": "2026-08-18",
+    "model_pool_path": "commonstack_smoke_models.json"
+  },
+  "backend": "mock",
+  "benchmarks": {
+    "custom_qa": {
+      "display_name": "Custom QA",
+      "scenario": "single_turn_qa",
+      "multi_step": false,
+      "manual_review": false,
+      "source": {
+        "uri": "local://custom_qa_tasks.jsonl",
+        "license": "CC0-1.0",
+        "version": "example-v1"
+      },
+      "loader": {
+        "type": "single_turn",
+        "options": {
+          "system_prompt": "Answer the question concisely.",
+          "field_map": {
+            "instance_id": "id",
+            "prompt": "question",
+            "reference": "answer",
+            "target_tier": "target_tier",
+            "hint": "hint"
+          }
+        }
+      },
+      "evaluation": {
+        "trial": "execution",
+        "final": "execution"
+      }
+    }
+  },
+  "run": {
+    "benchmarks": "all",
+    "output_dir": "../../runs/data-generation/custom-qa"
+  }
+}

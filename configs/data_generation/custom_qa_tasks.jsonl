@@ -1,0 +1,2 @@
+{"id":"capital-france","question":"What is the capital of France?","answer":"Paris","target_tier":"low","hint":"low"}
+{"id":"explain-cache","question":"Explain why a cache TTL is useful in one sentence.","answer":"A cache TTL limits how long stale data can be reused.","target_tier":"mid","hint":"low"}

@@ -1,0 +1,46 @@
+{
+  "tasks": [
+    {
+      "benchmark": "bfcl",
+      "benchmark_display": "BFCL",
+      "scenario": "bfcl_tool_use_multi_turn",
+      "instance_id": "fixture_bfcl_1",
+      "initial_messages": [
+        {"role": "system", "content": "Select and call the available functions accurately."},
+        {"role": "user", "content": "Find tomorrow's weather and create a reminder if it will rain."}
+      ],
+      "functions": [
+        {
+          "name": "get_weather",
+          "description": "Return a weather forecast.",
+          "parameters": {"type": "object", "properties": {"day": {"type": "string"}}, "required": ["day"]}
+        },
+        {
+          "name": "create_reminder",
+          "description": "Create a reminder.",
+          "parameters": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}
+        }
+      ],
+      "steps": [
+        {
+          "hint": "low",
+          "minimum_tier": "low",
+          "observation": "The forecast indicates rain."
+        },
+        {
+          "hint": "mid",
+          "minimum_tier": "mid_high",
+          "observation": "The reminder was created.",
+          "fail_models": ["anthropic/claude-haiku-4-5"]
+        }
+      ],
+      "source": {
+        "uri": "fixture://bfcl",
+        "license": "CC-BY-4.0",
+        "version": "synthetic-fixture-v1"
+      },
+      "benchmark_version": "bfcl_fixture_v1",
+      "benchmark_subset": "fixture"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "tasks": [
+    {
+      "benchmark": "qmsum",
+      "benchmark_display": "QMSum",
+      "scenario": "meeting_query_summarization",
+      "instance_id": "fixture_qmsum_1",
+      "initial_messages": [
+        {"role": "system", "content": "Summarize the meeting faithfully for the requested topic."},
+        {"role": "user", "content": "Transcript: The team chose a five-minute cache TTL. Query: What cache decision was made?"}
+      ],
+      "steps": [
+        {"hint": "low", "minimum_tier": "mid", "observation": "The summary preserves the stated decision."}
+      ],
+      "source": {
+        "uri": "fixture://qmsum",
+        "license": "MIT",
+        "version": "synthetic-fixture-v1"
+      },
+      "benchmark_version": "qmsum_fixture_v1",
+      "benchmark_subset": "fixture",
+      "judge_passed": true,
+      "judge_reason": "Faithful, appropriate, and complete."
+    }
+  ]
+}

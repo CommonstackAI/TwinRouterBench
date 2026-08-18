@@ -1,18 +1,78 @@
-# Twin Router Bench
+<div align="center">
 
-[![Paper](https://img.shields.io/badge/Paper-arXiv-b31b1b)](https://arxiv.org/html/2605.18859)
-[![Code](https://img.shields.io/badge/Code-GitHub-24292f)](https://github.com/CommonstackAI/TwinRouterBench)
+# TwinRouterBench
+
+### Fast static supervision. Live agentic routing evaluation.
+
+**A two-track benchmark for choosing the cheapest sufficient LLM at every agent step.**
+
+[![Paper](https://img.shields.io/badge/Paper-arXiv%3A2605.18859-b31b1b)](https://arxiv.org/abs/2605.18859)
 [![Dataset](https://img.shields.io/badge/Dataset-Hugging%20Face-ffcc4d)](https://huggingface.co/datasets/Amorph/TwinRouterBench)
-[![Website](https://img.shields.io/badge/Website-Project-2ea44f)](https://commonstackai.github.io/TwinRouterBench/)
+[![Leaderboard](https://img.shields.io/badge/Leaderboard-Live-0f766e)](https://commonstackai.github.io/TwinRouterBench/)
+[![License](https://img.shields.io/badge/License-Apache--2.0-2563eb)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/CommonstackAI/TwinRouterBench?style=flat&color=f97316)](https://github.com/CommonstackAI/TwinRouterBench/stargazers)
 
-**Twin Router Bench** is a single benchmark suite for **per-step LLM routing**: a *router* chooses which pooled `model_id` to use on every agent step, under locked pricing and cache rules. The suite ships in one Python distribution (**`twinrouterbench`**) and one source tree (**`TwinRouterBench/`**).
+[**Project Page**](https://commonstackai.github.io/TwinRouterBench/) ·
+[**Paper**](https://arxiv.org/abs/2605.18859) ·
+[**Dataset**](https://huggingface.co/datasets/Amorph/TwinRouterBench) ·
+[**Data Pipeline**](docs/DATA_GENERATION.md) ·
+[**Submit a Router**](https://github.com/CommonstackAI/TwinRouterBench/issues/new?template=leaderboard_submission.yml)
 
-It contains **two tracks** inside the same product—same protocol and locked tables—not two separate benchmarks:
+</div>
 
-| Track | Role | CLI entry |
-|-------|------|-----------|
-| **Static** | Fast validation on a fixed supervision bank (tier labels + nominal cost metrics). | `twinrouterbench static …` |
-| **Dynamic** | End-to-end evaluation on **SWE-bench Verified** with real tool use—**mini-swe-agent** scaffold or **editor** scaffold. | `twinrouterbench dynamic …` / `twinrouterbench swe …` |
+<p align="center">
+  <img src="leaderboard/assets/overview.svg" width="100%" alt="TwinRouterBench combines execution-verified static supervision with live SWE-bench routing evaluation." />
+</p>
+
+## Why TwinRouterBench?
+
+Most router benchmarks make one model choice for a complete prompt. Real coding,
+research, and computer-use agents make many calls under changing tool state and
+conversation history. TwinRouterBench evaluates the decision the router actually
+faces: **which model should handle the next call given the full current prefix?**
+
+| Track | What it measures | Public artifact |
+|---|---|---|
+| **Static** | Cheapest-sufficient tier at each routed step, verified through downgrade search and mixed-model execution. | **970 labels**, **520 trajectories**, **5 workloads** |
+| **Dynamic** | End-to-end task success and realized API spend while routing every live agent call. | **100 held-out SWE-bench Verified cases** |
+
+> **Headline result.** The trained router resolves **75/100** held-out cases for
+> **$25.66**, compared with **74/100** for the **$54.73** all-Opus reference—a
+> **53.1% cost reduction** with comparable task success.
+
+## Quick start
+
+```bash
+pip install -e .
+
+# Reproduce the complete offline data-construction flow without API keys.
+twinrouterbench data generate \
+  --benchmark all \
+  --backend mock \
+  --output-dir runs/data-generation/mock-all
+
+# Add and run a new benchmark using only data + JSON configuration.
+twinrouterbench data run \
+  --config configs/data_generation/custom_qa_pipeline.json \
+  --output-dir runs/data-generation/custom-qa
+```
+
+The package exposes four connected surfaces:
+
+```bash
+twinrouterbench data ...       # config-driven construction/review/publish pipeline
+twinrouterbench static ...     # deterministic offline router scoring
+twinrouterbench dynamic ...    # live mini-swe-agent evaluation
+twinrouterbench swe ...        # editor-scaffold SWE-bench evaluation
+```
+
+| Resource | Link |
+|---|---|
+| Interactive leaderboard and protocol | [Project page](https://commonstackai.github.io/TwinRouterBench/) |
+| Static question bank | [Hugging Face](https://huggingface.co/datasets/Amorph/TwinRouterBench) |
+| Data-generation methodology and CLI | [docs/DATA_GENERATION.md](docs/DATA_GENERATION.md) |
+| Leaderboard submission rules | [docs/SUBMISSION.md](docs/SUBMISSION.md) |
+| Citation metadata | [CITATION.cff](CITATION.cff) |
 
 ---
 
@@ -100,6 +160,7 @@ Ensure a checkout exists at `semantic-router/` relative to the checkout parent d
 Primary entrypoint:
 
 ```bash
+twinrouterbench data <subcommand> [args]     # construct/review/publish data
 twinrouterbench static <subcommand> [args]   # static track
 twinrouterbench dynamic <subcommand> [args]  # mini-swe-agent harness
 twinrouterbench swe <subcommand> [args]     # editor-scaffold harness
@@ -372,7 +433,9 @@ Under `TwinRouterBench/scripts/examples/`:
 | `swerouter/` | Router protocol, pricing, cache simulation, harness, and leaderboard. |
 | `data/static/` | Static track JSONL: `question_bank.jsonl`, `manifest.json`. |
 | `data/dynamic/` | Dynamic track locked JSON: `model_pool.json`, `model_pricing.json`, `ttl_policy.json`, `tier_to_model.json`, `sr_knn_to_pool.json`, plus `dynamic_heldout100_ids.txt` (paper’s 100-case SWE-bench Verified held-out split). |
-| `twinrouterbench/` | Meta-CLI dispatcher. |
+| `twinrouterbench/data_generation/` | Static data construction, review, replay, provenance, and publish pipeline. |
+| `leaderboard/` | Project page and interactive static/dynamic leaderboard published through GitHub Pages. |
+| `twinrouterbench/` | Unified CLI dispatcher. |
 | `.env.example` | Template for gateway credentials. |
 
 ---
@@ -394,15 +457,28 @@ Do **not** upload run logs to the Hugging Face dataset page.
 
 ## Citation
 
-If you use Twin Router Bench in research, please cite the associated paper. **Bibliographic details are withheld for anonymous review** and will be added after publication (no preprint URL in this release).
+If you use TwinRouterBench, please cite the paper and this repository. Machine-readable metadata is available in [`CITATION.cff`](CITATION.cff).
+
+```bibtex
+@misc{yang2026twinrouterbench,
+  title         = {TwinRouterBench: Fast Static and Live Dynamic Evaluation for Realistic Agentic LLM Routing},
+  author        = {Pei Yang and Wanyi Chen and Tongyun Yang and Pengbin Feng and Jiarong Xing and Wentao Guo and Yuhang Yao and Yuhang Han and Hanchen Li and Xu Wang and Zeyu Wang and Jie Xiao and Anjie Yang and Liang Tian and Lynn Ai and Eric Yang and Tianyu Shi},
+  year          = {2026},
+  eprint        = {2605.18859},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  doi           = {10.48550/arXiv.2605.18859},
+  url           = {https://arxiv.org/abs/2605.18859}
+}
+```
 
 
 ## Implementation note (CLI forwarding)
 
-`twinrouterbench static|dynamic|swe` dispatches in-process to the existing CLIs. For debugging, you may still invoke `python -m miniswerouter.cli` or `python -m swerouter.cli` with `PYTHONPATH` set to `TwinRouterBench/`.
+`twinrouterbench data|static|dynamic|swe` dispatches in-process to the corresponding CLIs. For debugging, you may still invoke `python -m twinrouterbench.data_generation.cli`, `python -m miniswerouter.cli`, or `python -m swerouter.cli` with `PYTHONPATH` set to `TwinRouterBench/`.
 
 ---
 
 ## Appendix: migration
 
-This tree unifies the static and dynamic router benchmark tracks in one install. Use **Twin Router Bench** naming in new scripts; keep legacy console script names and pathnames only where required for backward compatibility.
+This tree unifies the static and dynamic router benchmark tracks in one install. Use **TwinRouterBench** in new documentation and scripts; keep legacy console-script names and pathnames only where backward compatibility requires them.

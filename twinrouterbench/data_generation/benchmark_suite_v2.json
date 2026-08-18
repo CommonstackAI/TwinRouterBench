@@ -1,0 +1,56 @@
+{
+  "schema": "twinrouterbench.benchmark_suite.v1",
+  "version": "twinrouterbench-builtins-v2-2026-08-18",
+  "benchmarks": {
+    "swebench": {
+      "display_name": "SWE-Bench Verified",
+      "scenario": "code_swe",
+      "multi_step": true,
+      "manual_review": true,
+      "source": "fixture://swebench",
+      "fixture_name": "swebench",
+      "loader": "normalized",
+      "evaluation": {"trial": "execution", "final": "execution"}
+    },
+    "bfcl": {
+      "display_name": "BFCL",
+      "scenario": "bfcl_tool_use",
+      "multi_step": true,
+      "manual_review": true,
+      "source": "fixture://bfcl",
+      "fixture_name": "bfcl",
+      "loader": "normalized",
+      "evaluation": {"trial": "execution", "final": "execution"}
+    },
+    "mtrag": {
+      "display_name": "mtRAG",
+      "scenario": "rag_multiturn",
+      "multi_step": false,
+      "manual_review": false,
+      "source": "fixture://mtrag",
+      "fixture_name": "mtrag",
+      "loader": "normalized",
+      "evaluation": {"trial": "execution", "final": "backend_judge"}
+    },
+    "qmsum": {
+      "display_name": "QMSum",
+      "scenario": "meeting_query_summarization",
+      "multi_step": false,
+      "manual_review": false,
+      "source": "fixture://qmsum",
+      "fixture_name": "qmsum",
+      "loader": "normalized",
+      "evaluation": {"trial": "execution", "final": "backend_judge"}
+    },
+    "pinchbench": {
+      "display_name": "PinchBench",
+      "scenario": "general_agent",
+      "multi_step": true,
+      "manual_review": true,
+      "source": "fixture://pinchbench",
+      "fixture_name": "pinchbench",
+      "loader": "normalized",
+      "evaluation": {"trial": "execution", "final": "execution"}
+    }
+  }
+}

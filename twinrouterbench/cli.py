@@ -1,4 +1,4 @@
-"""Unified CLI for Twin Router Bench: static track, dynamic track (mini), editor harness."""
+"""Unified CLI for benchmark evaluation and data construction."""
 
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ def _print_help() -> None:
 
 Usage:
   twinrouterbench static <args>     Static track (question bank, nominal metrics)
+  twinrouterbench data <args>       Build/review/publish static supervision
   twinrouterbench dynamic <args>    Dynamic track on mini-swe-agent (requires [dynamic])
   twinrouterbench swe <args>        Editor-scaffold SWE harness (requires [dynamic])
 
@@ -48,6 +49,11 @@ def main() -> int:
 
         static_main(rest)
         return 0
+
+    if cmd == "data":
+        from twinrouterbench.data_generation.cli import main as data_main
+
+        return int(data_main(rest))
 
     if cmd == "dynamic":
         _require_dynamic_track()

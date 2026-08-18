@@ -1,0 +1,48 @@
+{
+  "tasks": [
+    {
+      "benchmark": "mtrag",
+      "benchmark_display": "mtRAG",
+      "scenario": "rag_multiturn",
+      "instance_id": "fixture_mtrag_pass",
+      "initial_messages": [
+        {"role": "system", "content": "Answer only from the supplied evidence."},
+        {"role": "user", "content": "[Passage] Cache entries expire after five minutes. What is the cache TTL?"}
+      ],
+      "steps": [
+        {"hint": "low", "minimum_tier": "low", "observation": "The answer was grounded in the passage."}
+      ],
+      "source": {
+        "uri": "fixture://mtrag",
+        "license": "IBM-Research-source-license",
+        "version": "synthetic-fixture-v1"
+      },
+      "benchmark_version": "mtrag_fixture_v1",
+      "benchmark_subset": "fixture",
+      "judge_passed": true,
+      "judge_reason": "Faithful, appropriate, complete, and supported by evidence."
+    },
+    {
+      "benchmark": "mtrag",
+      "benchmark_display": "mtRAG",
+      "scenario": "rag_multiturn",
+      "instance_id": "fixture_mtrag_pseudo_pass",
+      "initial_messages": [
+        {"role": "system", "content": "Answer only from the supplied evidence."},
+        {"role": "user", "content": "[Passage] No deployment region is stated. Which region is used?"}
+      ],
+      "steps": [
+        {"hint": "low", "minimum_tier": "low", "observation": "A fluent but unsupported answer was produced."}
+      ],
+      "source": {
+        "uri": "fixture://mtrag",
+        "license": "IBM-Research-source-license",
+        "version": "synthetic-fixture-v1"
+      },
+      "benchmark_version": "mtrag_fixture_v1",
+      "benchmark_subset": "fixture",
+      "judge_passed": false,
+      "judge_reason": "Evidence conflict: the answer invents an unstated region."
+    }
+  ]
+}
