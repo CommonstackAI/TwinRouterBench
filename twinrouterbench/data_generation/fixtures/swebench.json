@@ -1,0 +1,42 @@
+{
+  "tasks": [
+    {
+      "benchmark": "swebench",
+      "benchmark_display": "SWE-Bench Verified",
+      "scenario": "code_swe",
+      "instance_id": "fixture__swe-1",
+      "initial_messages": [
+        {"role": "system", "content": "You are a software engineering agent with shell tools."},
+        {"role": "user", "content": "Fix the parser so an empty field list returns an empty mapping."}
+      ],
+      "steps": [
+        {
+          "hint": "low",
+          "minimum_tier": "mid",
+          "observation": "The relevant parser implementation was located.",
+          "fail_models": ["minimax/minimax-m2.5"]
+        },
+        {
+          "hint": "low",
+          "minimum_tier": "low",
+          "observation": "The source file was patched and focused tests passed."
+        },
+        {
+          "hint": "not_downgradeable",
+          "minimum_tier": "high",
+          "observation": "The complete regression suite passed."
+        }
+      ],
+      "source": {
+        "uri": "fixture://swebench",
+        "license": "Apache-2.0",
+        "version": "synthetic-fixture-v1"
+      },
+      "benchmark_version": "swebench_verified_fixture_v1",
+      "benchmark_subset": "fixture",
+      "fixture_reviews": {
+        "2": {"verdict": "tight", "notes": "Cheapest tier remains sufficient."}
+      }
+    }
+  ]
+}

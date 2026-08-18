@@ -1,0 +1,20 @@
+Judge the current answer against the supplied task, reference evidence, and
+conversation prefix. First decide whether the current turn is actually solved,
+then assess Faithfulness, Appropriateness, and Completeness independently.
+
+Hard rules:
+- Any conflict with supplied evidence is a failure.
+- Unsupported factual additions are a failure.
+- Missing a required part of the request is a failure.
+- Uncertainty in the verdict is a failure.
+
+Return JSON matching:
+{
+  "passed": true,
+  "faithfulness": true,
+  "appropriateness": true,
+  "completeness": true,
+  "evidence_conflict": false,
+  "uncertain": false,
+  "reason": "..."
+}

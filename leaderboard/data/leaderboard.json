@@ -1,16 +1,16 @@
 {
   "schema": "twinrouterbench_leaderboard_v1",
-  "generated_at": "2026-05-09",
-  "version": "dynamic-heldout100-static970",
+  "generated_at": "2026-08-18",
+  "version": "paper-v2 · static-970 · dynamic-100",
   "title": "TwinRouterBench Leaderboard",
-  "notice": "Public preview: 4 dynamic router runs, 100 heldout SWE-bench Verified cases, and 970 static conditional per-call labels.",
+  "notice": "Paper v2 is public with 4 dynamic router runs, 100 held-out SWE-bench Verified cases, and 970 static per-call labels.",
   "links": {
     "github": "https://github.com/CommonstackAI/TwinRouterBench",
-    "submission": "https://github.com/CommonstackAI/TwinRouterBench/blob/main/docs/SUBMISSION.md",
-    "dataset": "https://github.com/CommonstackAI/TwinRouterBench/tree/main/data",
+    "submission": "https://github.com/CommonstackAI/TwinRouterBench/issues/new?template=leaderboard_submission.yml",
+    "dataset": "https://huggingface.co/datasets/Amorph/TwinRouterBench",
+    "pipeline": "https://github.com/CommonstackAI/TwinRouterBench/blob/main/docs/DATA_GENERATION.md",
     "static_manifest": "https://github.com/CommonstackAI/TwinRouterBench/blob/main/data/static/manifest.json",
-    "paper": "",
-    "croissant": ""
+    "paper": "https://arxiv.org/abs/2605.18859"
   },
   "dynamic": {
     "name": "Dynamic SWE-bench Verified heldout",

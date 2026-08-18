@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="620" viewBox="0 0 1440 620" role="img" aria-labelledby="title desc">
+  <title id="title">TwinRouterBench static and dynamic evaluation workflow</title>
+  <desc id="desc">Successful trajectories are converted into execution-verified static labels, used to train routers, and validated through live SWE-bench execution with official resolution and realized cost.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff7ed"/>
+      <stop offset="0.48" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#ecfeff"/>
+    </linearGradient>
+    <linearGradient id="static" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fb923c"/>
+      <stop offset="1" stop-color="#ea580c"/>
+    </linearGradient>
+    <linearGradient id="dynamic" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#14b8a6"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#0f172a" flood-opacity=".11"/>
+    </filter>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0 10 5 0 10Z" fill="#ea580c"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0 10 5 0 10Z" fill="#2563eb"/>
+    </marker>
+    <style>
+      text { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .label { font-size: 19px; font-weight: 800; letter-spacing: .08em; }
+      .title { font-size: 30px; font-weight: 800; fill: #0f172a; }
+      .body { font-size: 19px; fill: #475569; }
+      .metric { font-size: 31px; font-weight: 850; fill: #0f172a; }
+      .metric-label { font-size: 16px; font-weight: 700; fill: #64748b; }
+      .white { fill: white; }
+    </style>
+  </defs>
+  <rect width="1440" height="620" rx="32" fill="url(#bg)"/>
+  <g opacity=".55">
+    <circle cx="108" cy="90" r="48" fill="#fed7aa"/>
+    <circle cx="1330" cy="520" r="72" fill="#a5f3fc"/>
+    <path d="M0 515C280 440 450 600 720 515S1160 420 1440 490V620H0Z" fill="#fff" opacity=".5"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="70" y="82" width="570" height="390" rx="26" fill="white" stroke="#fed7aa" stroke-width="2"/>
+    <rect x="800" y="82" width="570" height="390" rx="26" fill="white" stroke="#99f6e4" stroke-width="2"/>
+  </g>
+
+  <rect x="100" y="112" width="172" height="42" rx="21" fill="url(#static)"/>
+  <text x="186" y="140" text-anchor="middle" class="label white">STATIC TRACK</text>
+  <text x="100" y="202" class="title">Execution-verified supervision</text>
+
+  <g>
+    <rect x="100" y="242" width="150" height="76" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <text x="175" y="273" text-anchor="middle" class="body">Successful</text>
+    <text x="175" y="299" text-anchor="middle" class="body">trajectories</text>
+    <path d="M260 280H314" stroke="#ea580c" stroke-width="4" marker-end="url(#arrow-orange)"/>
+    <rect x="326" y="228" width="184" height="104" rx="15" fill="#fff7ed" stroke="#fdba74"/>
+    <text x="418" y="263" text-anchor="middle" class="body">Downgrade</text>
+    <text x="418" y="289" text-anchor="middle" class="body">+ tier cascade</text>
+    <text x="418" y="314" text-anchor="middle" class="metric-label">mixed-prefix replay</text>
+    <path d="M520 280H574" stroke="#ea580c" stroke-width="4" marker-end="url(#arrow-orange)"/>
+    <rect x="586" y="242" width="26" height="76" rx="13" fill="url(#static)"/>
+  </g>
+
+  <g transform="translate(100 365)">
+    <text x="0" y="0" class="metric">970</text>
+    <text x="0" y="27" class="metric-label">step-level labels</text>
+    <text x="155" y="0" class="metric">520</text>
+    <text x="155" y="27" class="metric-label">trajectories</text>
+    <text x="330" y="0" class="metric">5</text>
+    <text x="330" y="27" class="metric-label">agent workloads</text>
+  </g>
+
+  <rect x="830" y="112" width="194" height="42" rx="21" fill="url(#dynamic)"/>
+  <text x="927" y="140" text-anchor="middle" class="label white">DYNAMIC TRACK</text>
+  <text x="830" y="202" class="title">Live routed agent execution</text>
+  <g>
+    <rect x="830" y="242" width="150" height="76" rx="15" fill="#ecfeff" stroke="#5eead4"/>
+    <text x="905" y="273" text-anchor="middle" class="body">SWE-bench</text>
+    <text x="905" y="299" text-anchor="middle" class="body">Verified</text>
+    <path d="M990 280H1044" stroke="#2563eb" stroke-width="4" marker-end="url(#arrow-blue)"/>
+    <rect x="1056" y="228" width="138" height="104" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+    <text x="1125" y="263" text-anchor="middle" class="body">Router</text>
+    <text x="1125" y="289" text-anchor="middle" class="body">per call</text>
+    <text x="1125" y="314" text-anchor="middle" class="metric-label">locked pool</text>
+    <path d="M1204 280H1258" stroke="#2563eb" stroke-width="4" marker-end="url(#arrow-blue)"/>
+    <rect x="1270" y="242" width="70" height="76" rx="15" fill="url(#dynamic)"/>
+    <path d="M1291 263h28v9h-28zm0 16h28v9h-28zm0 16h28v9h-28z" fill="white"/>
+  </g>
+  <g transform="translate(830 365)">
+    <text x="0" y="0" class="metric">100</text>
+    <text x="0" y="27" class="metric-label">held-out cases</text>
+    <text x="178" y="0" class="metric">75%</text>
+    <text x="178" y="27" class="metric-label">best resolve rate</text>
+    <text x="358" y="0" class="metric">−53.1%</text>
+    <text x="358" y="27" class="metric-label">cost vs Opus ref.</text>
+  </g>
+
+  <path d="M640 410C710 460 730 460 800 410" fill="none" stroke="#64748b" stroke-width="3" stroke-dasharray="8 9" marker-end="url(#arrow-blue)"/>
+  <rect x="589" y="493" width="262" height="62" rx="31" fill="#0f172a"/>
+  <text x="720" y="520" text-anchor="middle" class="white" style="font-size:18px;font-weight:800">TRAIN FAST → VALIDATE LIVE</text>
+  <text x="720" y="542" text-anchor="middle" fill="#cbd5e1" style="font-size:14px">one benchmark · two complementary tracks</text>
+</svg>

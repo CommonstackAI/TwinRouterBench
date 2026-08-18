@@ -23,7 +23,9 @@ const els = {
   versionPill: document.querySelector("#versionPill"),
   workloadGrid: document.querySelector("#workloadGrid"),
   splitRule: document.querySelector("#splitRule"),
-  splitStats: document.querySelector("#splitStats")
+  splitStats: document.querySelector("#splitStats"),
+  copyCitation: document.querySelector("#copyCitation"),
+  bibtex: document.querySelector("#bibtex")
 };
 
 function pct(value, digits = 1) {
@@ -81,7 +83,7 @@ function renderNotice() {
   els.noticeBar.innerHTML = `
     <div class="notice-inner">
       <span class="notice-spark" aria-hidden="true"></span>
-      <strong>Leaderboard preview</strong>
+      <strong>TwinRouterBench</strong>
       <span>${state.data.notice}</span>
       <a href="${state.data.links.github}" target="_blank" rel="noreferrer">View repository</a>
     </div>
@@ -91,16 +93,19 @@ function renderNotice() {
 function renderLinks() {
   const links = state.data.links;
   const items = [
-    ["About", links.github],
-    ["Submit", links.submission],
-    ["Dataset", links.dataset],
-    ["Manifest", links.static_manifest],
+    ["About", "#about"],
+    ["Leaderboard", "#leaderboard"],
     ["Paper", links.paper],
-    ["Croissant", links.croissant]
-  ].filter(([, href]) => href);
+    ["Dataset", links.dataset],
+    ["Pipeline", links.pipeline],
+    ["Submit", links.submission]
+  ];
 
   els.projectLinks.innerHTML = items
-    .map(([label, href]) => `<a href="${href}" target="_blank" rel="noreferrer">${label}</a>`)
+    .map(([label, href]) => {
+      const external = href.startsWith("http");
+      return `<a href="${href}"${external ? ' target="_blank" rel="noreferrer"' : ""}>${label}</a>`;
+    })
     .join("");
 }
 
@@ -384,6 +389,16 @@ function bindEvents() {
       }, 1200);
     } catch {
       window.location.hash = "leaderboard";
+    }
+  });
+
+  els.copyCitation?.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(els.bibtex.textContent);
+      els.copyCitation.textContent = "Copied";
+      setTimeout(() => { els.copyCitation.textContent = "Copy BibTeX"; }, 1200);
+    } catch {
+      els.copyCitation.textContent = "Select text to copy";
     }
   });
 }

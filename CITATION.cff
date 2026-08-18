@@ -1,0 +1,88 @@
+cff-version: 1.2.0
+message: "If you use TwinRouterBench, please cite the paper and this software."
+title: "TwinRouterBench"
+type: software
+version: 0.1.0
+repository-code: "https://github.com/CommonstackAI/TwinRouterBench"
+url: "https://commonstackai.github.io/TwinRouterBench/"
+license: Apache-2.0
+authors:
+  - family-names: Yang
+    given-names: Pei
+  - family-names: Chen
+    given-names: Wanyi
+  - family-names: Yang
+    given-names: Tongyun
+  - family-names: Feng
+    given-names: Pengbin
+  - family-names: Xing
+    given-names: Jiarong
+  - family-names: Guo
+    given-names: Wentao
+  - family-names: Yao
+    given-names: Yuhang
+  - family-names: Han
+    given-names: Yuhang
+  - family-names: Li
+    given-names: Hanchen
+  - family-names: Wang
+    given-names: Xu
+  - family-names: Wang
+    given-names: Zeyu
+  - family-names: Xiao
+    given-names: Jie
+  - family-names: Yang
+    given-names: Anjie
+  - family-names: Tian
+    given-names: Liang
+  - family-names: Ai
+    given-names: Lynn
+  - family-names: Yang
+    given-names: Eric
+  - family-names: Shi
+    given-names: Tianyu
+identifiers:
+  - type: doi
+    value: "10.48550/arXiv.2605.18859"
+    description: "arXiv-issued DOI"
+preferred-citation:
+  type: article
+  title: "TwinRouterBench: Fast Static and Live Dynamic Evaluation for Realistic Agentic LLM Routing"
+  year: 2026
+  doi: "10.48550/arXiv.2605.18859"
+  url: "https://arxiv.org/abs/2605.18859"
+  authors:
+    - family-names: Yang
+      given-names: Pei
+    - family-names: Chen
+      given-names: Wanyi
+    - family-names: Yang
+      given-names: Tongyun
+    - family-names: Feng
+      given-names: Pengbin
+    - family-names: Xing
+      given-names: Jiarong
+    - family-names: Guo
+      given-names: Wentao
+    - family-names: Yao
+      given-names: Yuhang
+    - family-names: Han
+      given-names: Yuhang
+    - family-names: Li
+      given-names: Hanchen
+    - family-names: Wang
+      given-names: Xu
+    - family-names: Wang
+      given-names: Zeyu
+    - family-names: Xiao
+      given-names: Jie
+    - family-names: Yang
+      given-names: Anjie
+    - family-names: Tian
+      given-names: Liang
+    - family-names: Ai
+      given-names: Lynn
+    - family-names: Yang
+      given-names: Eric
+    - family-names: Shi
+      given-names: Tianyu

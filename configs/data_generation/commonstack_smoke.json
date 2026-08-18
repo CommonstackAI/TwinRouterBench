@@ -1,0 +1,15 @@
+{
+  "run_id": "commonstack-live-smoke-2026-08-18",
+  "backend_name": "live",
+  "seed": 20260818,
+  "review_rate": 0,
+  "cascade_size": 1,
+  "max_cases_per_benchmark": 1,
+  "collector": "twinrouterbench-commonstack-live-smoke",
+  "collected_at": "2026-08-18",
+  "model_pool_path": "configs/data_generation/commonstack_smoke_models.json",
+  "generation_parameters": {
+    "temperature": 0,
+    "top_p": 1
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "tasks": [
+    {
+      "benchmark": "pinchbench",
+      "benchmark_display": "PinchBench",
+      "scenario": "general_agent",
+      "instance_id": "fixture_pinch_1",
+      "initial_messages": [
+        {"role": "system", "content": "Complete the task with the available tools."},
+        {"role": "user", "content": "Create a calendar event and then verify it exists."}
+      ],
+      "steps": [
+        {"hint": "low", "minimum_tier": "mid", "observation": "The event was created."},
+        {"hint": "low", "minimum_tier": "low", "observation": "The event was found during verification."}
+      ],
+      "blocked_tier_combinations": [
+        {"1": "mid", "2": "low"}
+      ],
+      "source": {
+        "uri": "fixture://pinchbench",
+        "license": "MIT",
+        "version": "synthetic-fixture-v1"
+      },
+      "benchmark_version": "pinchbench_fixture_v1",
+      "benchmark_subset": "fixture"
+    }
+  ]
+}
