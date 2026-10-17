@@ -43,6 +43,7 @@ Leaderboard = "https://commonstackai.github.io/TwinRouterBench/"
 
 [project.scripts]
 twinrouterbench = "twinrouterbench.cli:main"
+twinrouterbench-opencode-router = "twinrouterbench.opencode_router.proxy:main"
 CommonRouterBench = "main.cli:main"
 miniswerouterbench = "miniswerouter.cli:main"
 swerouterbench = "swerouter.cli:main"
@@ -63,6 +64,9 @@ main = [
 ]
 swerouter = ["../data/dynamic/*.json"]
 twinrouterbench = [
+  "opencode_router/*.json",
+  "opencode_router/*.mjs",
+  "opencode_router/*.example.py",
   "data_generation/*.json",
   "data_generation/fixtures/*.json",
   "data_generation/prompts/*.txt",

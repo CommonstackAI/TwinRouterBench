@@ -1,0 +1,34 @@
+{
+  "virtual_model": "auto",
+  "upstream_base_url": "https://openrouter.ai/api/v1",
+  "api_key_env": "ROUTER_UPSTREAM_API_KEY",
+  "local_token_env": "TWIN_ROUTER_TOKEN",
+  "timeout_seconds": 180,
+  "models": {
+    "low": "deepseek/deepseek-v3.2",
+    "mid": "minimax/minimax-m2.5",
+    "mid_high": "google/gemini-3-flash-preview",
+    "high": "anthropic/claude-opus-4.6"
+  },
+  "default_tier": "high",
+  "rules": [
+    {
+      "name": "patch-or-error",
+      "field": "last_message",
+      "pattern": "traceback|exception|failing test|implement|fix (?:the|this)|\u4fee\u590d|\u4fee\u6539\u4ee3\u7801|\u5b9e\u73b0",
+      "tier": "high"
+    },
+    {
+      "name": "explicit-simple-lookup",
+      "field": "last_message",
+      "pattern": "^\\s*(?:please )?(?:list files|find (?:the )?file|show (?:the )?directory|\u5217\u51fa\u6587\u4ef6|\u67e5\u627e\u6587\u4ef6)",
+      "tier": "low"
+    },
+    {
+      "name": "explicit-summary",
+      "field": "last_message",
+      "pattern": "^\\s*(?:summarize|\u603b\u7ed3|\u5f52\u7eb3)",
+      "tier": "mid"
+    }
+  ]
+}
