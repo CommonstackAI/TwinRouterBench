@@ -6,7 +6,7 @@
   "timeout_seconds": 180,
   "models": {
     "low": "deepseek/deepseek-v3.2",
-    "mid": "minimax/minimax-m2.5",
+    "mid": "minimax/minimax-m2.7",
     "mid_high": "google/gemini-3-flash-preview",
     "high": "anthropic/claude-opus-4.6"
   },

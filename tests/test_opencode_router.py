@@ -77,6 +77,33 @@ class RouterTests(unittest.TestCase):
             config=dict(self.config,policy_module='policy.py')
             with self.assertRaises(ValueError):RoutingPolicy(config,d).select({'messages':[]},None)
 
+    def test_invalid_request_reports_the_reason(self):
+        with self.assertRaises(urllib.error.HTTPError) as e:
+            self.post({'model':'auto','messages':[]})
+        self.assertEqual(e.exception.code,400)
+        self.assertIn('messages must be a nonempty array',json.load(e.exception)['error']['message'])
+
+    def test_policy_failure_is_a_server_error_with_cause_and_ledger_event(self):
+        for exc in ["KeyError('feature_x')","RuntimeError('weights not loaded')"]:
+            with tempfile.TemporaryDirectory() as d:
+                Path(d,'policy.py').write_text("def select_model(request, context): raise "+exc+"\n")
+                ledger=Path(d)/'events.jsonl'
+                server=RouterServer(('127.0.0.1',0),dict(self.config,policy_module='policy.py'),mode='mock',ledger=ledger,config_dir=d)
+                thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+                request=urllib.request.Request('http://127.0.0.1:'+str(server.server_port)+'/v1/chat/completions',
+                    data=json.dumps({'model':'auto','messages':[{'role':'user','content':'PRIVATE_PROMPT'}]}).encode(),headers={'Content-Type':'application/json'})
+                try:
+                    with patch('sys.stderr'), self.assertRaises(urllib.error.HTTPError) as e:urllib.request.urlopen(request,timeout=5)
+                    self.assertEqual(e.exception.code,500)
+                    message=json.load(e.exception)['error']['message']
+                    self.assertIn(exc.split('(')[0],message)
+                finally:
+                    server.shutdown();server.server_close();thread.join()
+                event=json.loads(ledger.read_text())
+                self.assertEqual(event['status'],'routing_error')
+                self.assertEqual(event['error_type'],exc.split('(')[0])
+                self.assertNotIn('PRIVATE_PROMPT',ledger.read_text())
+
     def test_custom_policy_receives_tools_and_cannot_mutate_forwarded_prefix(self):
         with tempfile.TemporaryDirectory() as d:
             Path(d, 'policy.py').write_text(

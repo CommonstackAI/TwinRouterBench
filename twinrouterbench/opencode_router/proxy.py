@@ -17,8 +17,10 @@ import math
 import os
 from pathlib import Path
 import re
+import sys
 import threading
 import time
+import traceback
 import urllib.error
 import urllib.request
 import uuid
@@ -172,9 +174,19 @@ class RouterHandler(BaseHTTPRequestHandler):
             session = self.headers.get('x-twinrouter-session')
             # Without the optional plugin there is no trustworthy session identity.
             session_hash = hashlib.sha256(session.encode()).hexdigest() if session else None
+        except (ValueError, TypeError, KeyError, AttributeError) as exc:
+            return self.send_json(400, {'error': {'message': 'Invalid chat request: '+str(exc)}})
+        try:
             decision = self.server.policy.select(body, session_hash)
-        except (ValueError, TypeError, KeyError, AttributeError, json.JSONDecodeError):
-            return self.send_json(400, {'error': {'message': 'Invalid chat request or routing decision'}})
+        except Exception as exc:
+            # A failing policy is a router bug, not a client error: surface the cause.
+            traceback.print_exc(file=sys.stderr)
+            self.server.record({'request_id': str(uuid.uuid4()), 'timestamp': datetime.now(timezone.utc).isoformat(),
+                                'mode': self.server.mode, 'session_hash': session_hash,
+                                'messages_count': len(body['messages']), 'status': 'routing_error',
+                                'error_type': type(exc).__name__})
+            return self.send_json(500, {'error': {'message': 'Routing policy failed: '+type(exc).__name__+': '+str(exc),
+                                                  'type': 'routing_error'}})
         event = {'request_id': str(uuid.uuid4()), 'timestamp': datetime.now(timezone.utc).isoformat(),
                  'mode': self.server.mode, 'session_hash': session_hash,
                  'selected_model': decision['model_id'], 'policy_reason': decision['reason'],
@@ -192,10 +204,11 @@ class RouterHandler(BaseHTTPRequestHandler):
             event['status'] = 'upstream_http_'+str(exc.code)
             # Upstream error bodies can echo request secrets. Never relay/log them.
             self.send_json(502, {'error': {'message': 'Upstream request failed', 'upstream_status': exc.code}})
-        except (OSError, ValueError, TimeoutError):
+        except (OSError, ValueError, TimeoutError) as exc:
             event['status'] = 'upstream_error_cost_may_be_unknown'
+            event['error_type'] = type(exc).__name__
             if not getattr(self, '_stream_started', False):
-                self.send_json(502, {'error': {'message': 'Upstream connection or response failed'}})
+                self.send_json(502, {'error': {'message': 'Upstream connection or response failed: '+type(exc).__name__+': '+str(exc)}})
             else:
                 self.close_connection = True
         finally:
