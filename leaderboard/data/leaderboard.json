@@ -1,9 +1,9 @@
 {
   "schema": "twinrouterbench_leaderboard_v1",
-  "generated_at": "2026-08-18",
+  "generated_at": "2026-10-22",
   "version": "paper-v2 · static-970 · dynamic-100",
   "title": "TwinRouterBench Leaderboard",
-  "notice": "Paper v2 is public with 4 dynamic router runs, 100 held-out SWE-bench Verified cases, and 970 static per-call labels.",
+  "notice": "Paper v2 provides 970 static labels and 4 dynamic runs. The leaderboard includes 5 entries on the held-out-100 split, including the Jiuwen Router community submission.",
   "links": {
     "github": "https://github.com/CommonstackAI/TwinRouterBench",
     "submission": "https://github.com/CommonstackAI/TwinRouterBench/issues/new?template=leaderboard_submission.yml",
@@ -123,6 +123,62 @@
           "Cost-efficient"
         ],
         "notes": "Trained UncommonRoute result from new_ur_verified122 dynamic artifacts."
+      },
+      {
+        "id": "jiuwen_router",
+        "name": "Jiuwen Router",
+        "kind": "Community submission",
+        "benchmark": "SWE-bench Verified heldout",
+        "cases": 100,
+        "resolved": 79,
+        "resolve_rate": 0.79,
+        "total_cost_usd": 59.1213125,
+        "avg_cost_usd": 0.591213125,
+        "total_leaderboard_bill_usd": 71.72131250000001,
+        "total_penalty_cost_usd": 12.599999999999996,
+        "failure_penalty_usd": 0.6,
+        "total_steps": 5247,
+        "avg_steps": 52.47,
+        "model_distribution": {
+          "anthropic/claude-opus-4.6": 2954,
+          "google/gemini-3-flash-preview": 2292,
+          "minimax/minimax-m2.7": 1
+        },
+        "badges": [
+          "Community",
+          "Artifact re-scored"
+        ],
+        "notes": "Submitted traces re-scored under locked v12 pricing; no independent task rerun. Four call-counter gaps remain unverified. Bill including failure penalty: $71.7213.",
+        "source": "https://github.com/CommonstackAI/TwinRouterBench/issues/8",
+        "artifact_url": "https://huggingface.co/datasets/danmts/jiuwen-router-twinrouterbench-heldout100/resolve/main/jiuwen_router_heldout100_20260813.tar.gz",
+        "artifact_sha256": "db8b27d23fa185488a94553d279331bfd84ae41967e8d720d29f810aa8f12bbe",
+        "router_label": "fv_graft_live",
+        "pool_fingerprint": "anthropic/claude-opus-4.6|deepseek/deepseek-v3.2|google/gemini-3-flash-preview|minimax/minimax-m2.7",
+        "pricing_fingerprint": "12.anthropic/claude-opus-4.6|deepseek/deepseek-v3.2|google/gemini-3-flash-preview|minimax/minimax-m2.7",
+        "verification": {
+          "scope": "Submitted artifact integrity, exact split and locked-price recomputation from raw usage",
+          "independent_task_rerun": false,
+          "trace_call_index_gaps": 4,
+          "call_gap_details": [
+            {
+              "instance_id": "astropy__astropy-14182",
+              "missing_step_index": 46
+            },
+            {
+              "instance_id": "django__django-12965",
+              "missing_step_index": 61
+            },
+            {
+              "instance_id": "django__django-13315",
+              "missing_step_index": 61
+            },
+            {
+              "instance_id": "django__django-13401",
+              "missing_step_index": 33
+            }
+          ],
+          "limitation": "Recorded costs are verified; the package does not establish whether the four unrecorded attempts incurred additional cost. Router implementation and original official grader reports are not included."
+        }
       }
     ]
   },
