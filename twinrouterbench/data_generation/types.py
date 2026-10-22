@@ -130,6 +130,14 @@ class ExecutionResult:
     prefixes: tuple[tuple[dict[str, Any], ...], ...]
     responses: tuple[dict[str, Any], ...]
     reason: str = ""
+    # Harness backends attest to their official pass predicate. A generic
+    # text transport cannot do so and must use an independent evaluator.
+    verified: bool = True
+    verification: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if type(self.passed) is not bool or type(self.verified) is not bool:
+            raise ValueError("execution passed and verified must be JSON booleans")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -138,18 +146,23 @@ class ExecutionResult:
             "prefixes": [list(copy.deepcopy(prefix)) for prefix in self.prefixes],
             "responses": list(copy.deepcopy(self.responses)),
             "reason": self.reason,
+            "verified": self.verified,
+            "verification": copy.deepcopy(self.verification),
         }
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> "ExecutionResult":
         return cls(
-            passed=bool(raw["passed"]),
+            passed=raw["passed"],
             step_count=int(raw["step_count"]),
             prefixes=tuple(
                 tuple(copy.deepcopy(prefix)) for prefix in raw.get("prefixes", [])
             ),
             responses=tuple(copy.deepcopy(raw.get("responses", []))),
             reason=str(raw.get("reason", "")),
+            # Old logs do not attest to an official execution verdict.
+            verified=raw.get("verified", False),
+            verification=copy.deepcopy(raw.get("verification") or {}),
         )
 
 
@@ -190,6 +203,12 @@ class JudgeResult:
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> "JudgeResult":
+        for key in (
+            "passed", "faithfulness", "appropriateness", "completeness",
+            "evidence_conflict", "uncertain",
+        ):
+            if key in raw and type(raw[key]) is not bool:
+                raise ValueError(f"judge field {key!r} must be a JSON boolean")
         return cls(
             passed=bool(raw["passed"]),
             faithfulness=bool(raw.get("faithfulness", raw["passed"])),

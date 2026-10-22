@@ -131,7 +131,8 @@ def test_all_five_adapters_generate_and_hardened_judge_rejects_pseudo_pass(
     }
     assert manifest["counts"]["rejected_instances"] == {"mtrag": 1}
     rejections = _read_jsonl(tmp_path / "run" / "rejections.jsonl")
-    assert rejections[0]["stage"] == "open_ended_judge"
+    # The judge now validates seeds and every downgrade, not just the final row.
+    assert rejections[0]["stage"] == "seed"
     assert "Evidence conflict" in rejections[0]["reason"]
 
 
@@ -200,19 +201,21 @@ def test_passing_candidate_with_changed_step_count_is_not_accepted(tmp_path: Pat
             *,
             target_step: int,
             generation_parameters: dict[str, Any],
+            locked_execution: ExecutionResult | None = None,
         ) -> ExecutionResult:
             result = super().run_mixed(
                 task,
                 assignments,
                 target_step=target_step,
                 generation_parameters=generation_parameters,
+                locked_execution=locked_execution,
             )
             if target_step == 2 and assignments[1].tier == "low":
                 return ExecutionResult(
                     passed=True,
                     step_count=result.step_count + 1,
-                    prefixes=result.prefixes,
-                    responses=result.responses,
+                    prefixes=result.prefixes + (result.prefixes[-1],),
+                    responses=result.responses + (result.responses[-1],),
                     reason="fixture changes the number of trajectory steps",
                 )
             return result
@@ -313,7 +316,8 @@ def test_mock_golden_hashes_detect_protocol_drift(tmp_path: Path) -> None:
     _mock_pipeline(run)
     expected = {
         "labels.pre_review.jsonl": "6d23241b0d11d9e7bbd837b397dac26ab333d9a7152dd5f7e5b588c08b647f0b",
-        "execution_trials.jsonl": "cad5067e9e9e740834a88e73524f4466e461aaf63e5c1ca8dbf7610b24348bb6",
+        # Adds prefix/trace checks and stops pseudo-passing seeds before search.
+        "execution_trials.jsonl": "4a9105a1a027a6352f29ed51e29e682f08f0b1c07f45c87b743f97561ece2737",
     }
     for name, digest in expected.items():
         assert hashlib.sha256((run / name).read_bytes()).hexdigest() == digest
@@ -470,7 +474,12 @@ def test_config_only_exact_match_uses_generic_openai_backend(
         body = json.loads(request.data)
         model = body["model"]
         calls.append(model)
-        content = "Lyon" if model == "model-low" else "Paris"
+        if body["messages"][0].get("role") == "system":
+            content = json.dumps({"steps": [
+                {"step_index": 1, "start_tier": "low", "reason": "unit hint"}
+            ]})
+        else:
+            content = "Lyon" if model == "model-low" else "Paris"
         return Response(
             json.dumps({"choices": [{"message": {"content": content}}]}).encode()
         )
@@ -517,7 +526,7 @@ def test_config_only_exact_match_uses_generic_openai_backend(
     output = tmp_path / "exact-run"
     manifest = run_pipeline(config, output_dir=output)
     assert manifest["status"] == "ready"
-    assert calls == ["model-high", "model-low", "model-mid"]
+    assert calls == ["model-high", "model-high", "model-low", "model-mid"]
     trials = _read_jsonl(output / "execution_trials.jsonl")
     assert [(row["candidate_tier"], row["passed"]) for row in trials] == [
         ("low", False),

@@ -11,7 +11,9 @@ from __future__ import annotations
 import copy
 import hashlib
 import importlib
+import inspect
 import json
+from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any, Protocol, Sequence, runtime_checkable
 
@@ -34,6 +36,15 @@ def request_key(operation: str, request: dict[str, Any]) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def locked_prefix_key(execution: ExecutionResult, target_step: int) -> str:
+    raw = execution.to_dict()
+    return request_key("locked_prefix", {
+        "prefixes": raw["prefixes"][:target_step],
+        "responses": raw["responses"][:target_step - 1],
+        "functions_by_step": execution.verification.get("functions_by_step", [])[:target_step],
+    })
+
+
 @runtime_checkable
 class ExecutionBackend(Protocol):
     def run_seed(self, task: TaskSpec, strong_model: str) -> ExecutionResult: ...
@@ -49,6 +60,7 @@ class ExecutionBackend(Protocol):
         *,
         target_step: int,
         generation_parameters: dict[str, Any],
+        locked_execution: ExecutionResult | None = None,
     ) -> ExecutionResult: ...
 
     def judge_open_ended(
@@ -102,9 +114,13 @@ class MockBackend:
         *,
         target_step: int,
         generation_parameters: dict[str, Any],
+        locked_execution: ExecutionResult | None = None,
     ) -> ExecutionResult:
-        del target_step, generation_parameters
-        return self._execute(task, assignments)
+        del generation_parameters
+        return self._execute(
+            task, assignments, target_step=target_step,
+            locked_execution=locked_execution,
+        )
 
     def judge_open_ended(
         self, task: TaskSpec, execution: ExecutionResult
@@ -121,7 +137,9 @@ class MockBackend:
         )
 
     def _execute(
-        self, task: TaskSpec, assignments: Sequence[Assignment]
+        self, task: TaskSpec, assignments: Sequence[Assignment], *,
+        target_step: int = 1,
+        locked_execution: ExecutionResult | None = None,
     ) -> ExecutionResult:
         if len(assignments) != len(task.steps):
             raise ValueError(
@@ -162,7 +180,15 @@ class MockBackend:
         messages = [copy.deepcopy(item) for item in task.initial_messages]
         prefixes: list[tuple[dict[str, Any], ...]] = []
         responses: list[dict[str, Any]] = []
+        if locked_execution is not None:
+            # Synthetic fixtures have no external tool state. Live plugins
+            # must also restore/replay the corresponding environment state.
+            messages = list(copy.deepcopy(locked_execution.prefixes[target_step - 1]))
+            prefixes = list(copy.deepcopy(locked_execution.prefixes[:target_step - 1]))
+            responses = list(copy.deepcopy(locked_execution.responses[:target_step - 1]))
         for index, (step, assignment) in enumerate(zip(task.steps, assignments), 1):
+            if locked_execution is not None and index < target_step:
+                continue
             prefixes.append(tuple(copy.deepcopy(messages)))
             response = {
                 "role": "assistant",
@@ -190,15 +216,21 @@ class MockBackend:
 class RecordingBackend:
     """Append every backend request/result pair to a replayable JSONL log."""
 
-    def __init__(self, backend: ExecutionBackend, path: Path) -> None:
+    def __init__(
+        self, backend: ExecutionBackend, path: Path, *,
+        generation_context: dict[str, Any] | None = None,
+    ) -> None:
         self.backend = backend
         self.path = path
+        self.generation_context = copy.deepcopy(generation_context or {})
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text("", encoding="utf-8")
 
     def _record(
         self, operation: str, request: dict[str, Any], result: Any
     ) -> None:
+        if self.generation_context:
+            request = {**request, "generation_context": self.generation_context}
         if hasattr(result, "to_dict"):
             encoded = result.to_dict()
         elif isinstance(result, Sequence):
@@ -213,6 +245,21 @@ class RecordingBackend:
         }
         with self.path.open("a", encoding="utf-8") as handle:
             handle.write(_canonical(row) + "\n")
+
+    def validate_task(self, task: TaskSpec) -> None:
+        validate = getattr(self.backend, "validate_task", None)
+        if validate is not None:
+            validate(task)
+        if len(task.steps) > 1:
+            parameters = inspect.signature(self.backend.run_mixed).parameters
+            if "locked_execution" not in parameters and not any(
+                parameter.kind == inspect.Parameter.VAR_KEYWORD
+                for parameter in parameters.values()
+            ):
+                raise ValueError(
+                    "multi-step backend must accept locked_execution and restore "
+                    "its locked responses and environment state before target_step"
+                )
 
     def run_seed(self, task: TaskSpec, strong_model: str) -> ExecutionResult:
         request = {
@@ -232,6 +279,7 @@ class RecordingBackend:
             "instance_id": task.instance_id,
             "seed_passed": seed.passed,
             "step_count": seed.step_count,
+            "seed_key": request_key("execution", seed.to_dict()),
         }
         result = list(self.backend.propose_hints(task, seed))
         self._record("hints", request, result)
@@ -244,6 +292,7 @@ class RecordingBackend:
         *,
         target_step: int,
         generation_parameters: dict[str, Any],
+        locked_execution: ExecutionResult | None = None,
     ) -> ExecutionResult:
         request = {
             "benchmark": task.benchmark,
@@ -252,11 +301,16 @@ class RecordingBackend:
             "assignments": [item.to_dict() for item in assignments],
             "generation_parameters": generation_parameters,
         }
+        extra: dict[str, Any] = {}
+        if locked_execution is not None:
+            request["locked_prefix_key"] = locked_prefix_key(locked_execution, target_step)
+            extra["locked_execution"] = copy.deepcopy(locked_execution)
         result = self.backend.run_mixed(
             task,
             assignments,
             target_step=target_step,
             generation_parameters=generation_parameters,
+            **extra,
         )
         self._record("mixed", request, result)
         return result
@@ -269,6 +323,7 @@ class RecordingBackend:
             "instance_id": task.instance_id,
             "execution_passed": execution.passed,
             "step_count": execution.step_count,
+            "execution_key": request_key("execution", execution.to_dict()),
         }
         result = self.backend.judge_open_ended(task, execution)
         self._record("judge", request, result)
@@ -280,9 +335,10 @@ class ReplayBackend:
 
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
+        self.generation_context: dict[str, Any] = {}
         if not self.path.is_file():
             raise FileNotFoundError(f"replay log does not exist: {self.path}")
-        self._events: dict[tuple[str, str], Any] = {}
+        self._events: dict[tuple[str, str], deque[Any]] = defaultdict(deque)
         for line_number, line in enumerate(
             self.path.read_text(encoding="utf-8").splitlines(), 1
         ):
@@ -290,17 +346,26 @@ class ReplayBackend:
                 continue
             row = json.loads(line)
             key = (str(row["operation"]), str(row["request_key"]))
-            if key in self._events:
-                raise ValueError(f"duplicate replay event at line {line_number}: {key}")
-            self._events[key] = row["result"]
+            self._events[key].append(row["result"])
+
+    def configure_generation(
+        self, *, generation_parameters: dict[str, Any],
+        prompt_versions: dict[str, str],
+    ) -> None:
+        self.generation_context = copy.deepcopy({
+            "generation_parameters": generation_parameters,
+            "prompt_versions": prompt_versions,
+        })
 
     def _get(self, operation: str, request: dict[str, Any]) -> Any:
+        if self.generation_context:
+            request = {**request, "generation_context": self.generation_context}
         key = (operation, request_key(operation, request))
-        if key not in self._events:
+        if not self._events.get(key):
             raise KeyError(
                 f"replay log has no {operation} event for request {_canonical(request)}"
             )
-        return copy.deepcopy(self._events[key])
+        return copy.deepcopy(self._events[key].popleft())
 
     def run_seed(self, task: TaskSpec, strong_model: str) -> ExecutionResult:
         raw = self._get(
@@ -323,6 +388,7 @@ class ReplayBackend:
                 "instance_id": task.instance_id,
                 "seed_passed": seed.passed,
                 "step_count": seed.step_count,
+                "seed_key": request_key("execution", seed.to_dict()),
             },
         )
         return [DowngradeHint.from_dict(item) for item in raw]
@@ -334,17 +400,18 @@ class ReplayBackend:
         *,
         target_step: int,
         generation_parameters: dict[str, Any],
+        locked_execution: ExecutionResult | None = None,
     ) -> ExecutionResult:
-        raw = self._get(
-            "mixed",
-            {
-                "benchmark": task.benchmark,
-                "instance_id": task.instance_id,
-                "target_step": target_step,
-                "assignments": [item.to_dict() for item in assignments],
-                "generation_parameters": generation_parameters,
-            },
-        )
+        request = {
+            "benchmark": task.benchmark,
+            "instance_id": task.instance_id,
+            "target_step": target_step,
+            "assignments": [item.to_dict() for item in assignments],
+            "generation_parameters": generation_parameters,
+        }
+        if locked_execution is not None:
+            request["locked_prefix_key"] = locked_prefix_key(locked_execution, target_step)
+        raw = self._get("mixed", request)
         return ExecutionResult.from_dict(raw)
 
     def judge_open_ended(
@@ -357,6 +424,7 @@ class ReplayBackend:
                 "instance_id": task.instance_id,
                 "execution_passed": execution.passed,
                 "step_count": execution.step_count,
+                "execution_key": request_key("execution", execution.to_dict()),
             },
         )
         return JudgeResult.from_dict(raw)

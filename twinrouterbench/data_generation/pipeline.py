@@ -8,12 +8,12 @@ import json
 import math
 import random
 from collections import Counter, defaultdict
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from importlib import resources
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-from .backends import ExecutionBackend, RecordingBackend
+from .backends import ExecutionBackend, RecordingBackend, locked_prefix_key
 from .benchmarking import BenchmarkRegistry, BenchmarkSpec, builtin_registry
 from .cache import TrialCache
 from .source import SourceSpec
@@ -24,6 +24,7 @@ from .types import (
     DowngradeHint,
     ExecutionResult,
     TaskSpec,
+    StepSpec,
 )
 
 
@@ -158,13 +159,32 @@ class GenerationPipeline:
         pool_path = self.config.model_pool_path or None
         self.model_pool_version, self.model_pool = load_model_pool(pool_path)
         self.backend = backend
+        configure = getattr(backend, "configure_generation", None)
+        if configure is not None:
+            configure(
+                generation_parameters=self.config.generation_parameters,
+                prompt_versions=self.config.prompt_versions,
+            )
         self.cache = TrialCache()
 
     def generate(self, benchmark: str | Sequence[str] = "all") -> dict[str, Any]:
+        try:
+            return self._generate(benchmark)
+        finally:
+            close = getattr(self.backend, "close", None)
+            if close is not None:
+                close()
+
+    def _generate(self, benchmark: str | Sequence[str]) -> dict[str, Any]:
         benchmarks = self._normalize_benchmarks(benchmark)
+        validate = getattr(self.backend, "validate_benchmark", None)
+        if validate is not None:
+            for name in benchmarks:
+                validate(self.registry.get(name))
         self._prepare_output_dir()
         config_lock = {
             **self.config.to_dict(),
+            "construction_protocol": "verified-sequential-locking-v2",
             "benchmarks": benchmarks,
             "model_pool_version": self.model_pool_version,
             "model_pool": self.model_pool,
@@ -174,10 +194,22 @@ class GenerationPipeline:
                 name: self.registry.get(name).to_dict() for name in benchmarks
             },
         }
+        if hasattr(self.backend, "prompt_artifacts"):
+            config_lock["prompt_artifacts"] = copy.deepcopy(self.backend.prompt_artifacts)
+            config_lock["backend_models"] = {
+                "tier_proposer": self.backend.proposer_model,
+                "open_ended_judge": self.backend.judge_model,
+            }
+        if hasattr(self.backend, "model_aliases"):
+            config_lock["provider_model_aliases"] = copy.deepcopy(self.backend.model_aliases)
         _write_json(self.output_dir / "config.lock.json", config_lock)
 
         backend = RecordingBackend(
-            self.backend, self.output_dir / "backend_events.jsonl"
+            self.backend, self.output_dir / "backend_events.jsonl",
+            generation_context={
+                "generation_parameters": self.config.generation_parameters,
+                "prompt_versions": self.config.prompt_versions,
+            },
         )
         seeds: list[dict[str, Any]] = []
         hints: list[dict[str, Any]] = []
@@ -213,6 +245,8 @@ class GenerationPipeline:
                     "license": task.source.license,
                     "version": task.source.version,
                 }
+                if getattr(adapter.loader, "filter_report", None):
+                    source_row["preprocessing"] = copy.deepcopy(adapter.loader.filter_report)
                 if source_row not in sources[benchmark_name]:
                     sources[benchmark_name].append(source_row)
                 result = self._generate_task(
@@ -263,6 +297,9 @@ class GenerationPipeline:
             sources=sources,
             status="ready" if ready_without_review else "awaiting_review",
         )
+        cost_summary = getattr(self.backend, "cost_summary", None)
+        if cost_summary is not None:
+            manifest["api_cost"] = cost_summary()
         _write_json(self.output_dir / "manifest.json", manifest)
         return manifest
 
@@ -277,6 +314,7 @@ class GenerationPipeline:
         trials: list[dict[str, Any]],
         rejections: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
+        backend.validate_task(task)
         high_models = self.model_pool["high"]
         strong_model = high_models[0]
         seed = backend.run_seed(task, strong_model)
@@ -288,22 +326,28 @@ class GenerationPipeline:
                 **seed.to_dict(),
             }
         )
-        if seed.step_count != len(task.steps) or len(seed.prefixes) != len(task.steps):
+        seed_verdict = adapter.trial_evaluator.evaluate(task, seed, backend)
+        if not self._verdict_passed(seed_verdict):
+            rejections.append({
+                "benchmark": task.benchmark, "instance_id": task.instance_id,
+                "stage": "seed", "reason": seed_verdict.reason or "strong seed trajectory failed",
+            })
+            return []
+        if task.metadata.get("infer_steps_from_seed"):
+            if seed.step_count <= 0:
+                raise ValueError("successful seed must contain a routed step")
+            task = replace(task, steps=tuple(
+                StepSpec("low", "high") for _ in range(seed.step_count)
+            ))
+        if task.metadata.get("capture_initial_prefix"):
+            task = replace(task, initial_messages=copy.deepcopy(seed.prefixes[0]))
+        if (seed.step_count != len(task.steps)
+                or len(seed.prefixes) != len(task.steps)
+                or len(seed.responses) != len(task.steps)
+                or seed.prefixes[0] != task.initial_messages):
             raise ValueError(
                 f"seed result for {task.instance_id} has inconsistent step count/prefixes"
             )
-        seed_verdict = adapter.trial_evaluator.evaluate(task, seed, backend)
-        if not self._verdict_passed(seed_verdict):
-            rejections.append(
-                {
-                    "benchmark": task.benchmark,
-                    "instance_id": task.instance_id,
-                    "stage": "seed",
-                    "reason": seed_verdict.reason or "strong seed trajectory failed",
-                }
-            )
-            return []
-
         proposed = list(backend.propose_hints(task, seed))
         self._validate_hints(task, proposed)
         hints.extend(
@@ -333,6 +377,8 @@ class GenerationPipeline:
                         step_index,
                         candidate,
                         self.config.generation_parameters,
+                        benchmark=task.benchmark,
+                        locked_prefix_key=locked_prefix_key(canonical, step_index),
                     )
                     execution = self.cache.get(key)
                     cache_hit = execution is not None
@@ -342,12 +388,24 @@ class GenerationPipeline:
                             candidate,
                             target_step=step_index,
                             generation_parameters=self.config.generation_parameters,
+                            locked_execution=canonical if len(task.steps) > 1 else None,
                         )
                         self.cache.put(key, execution)
                     verdict = adapter.trial_evaluator.evaluate(task, execution, backend)
                     same_length = execution.step_count == seed.step_count
+                    prefix_matches = bool(
+                        len(execution.prefixes) >= step_index
+                        and len(execution.responses) >= step_index - 1
+                        and execution.prefixes[:step_index] == canonical.prefixes[:step_index]
+                        and execution.responses[:step_index - 1] == canonical.responses[:step_index - 1]
+                    )
+                    complete_trace = bool(
+                        len(execution.prefixes) == execution.step_count
+                        and len(execution.responses) == execution.step_count
+                    )
                     accepted_attempt = bool(
                         self._verdict_passed(verdict) and same_length
+                        and prefix_matches and complete_trace
                     )
                     trials.append(
                         {
@@ -360,6 +418,8 @@ class GenerationPipeline:
                             "assignments": [item.to_dict() for item in candidate],
                             "passed": verdict.passed,
                             "same_step_count": same_length,
+                            "locked_prefix_matches": prefix_matches,
+                            "complete_trace": complete_trace,
                             "accepted": accepted_attempt,
                             "cache_hit": cache_hit,
                             "reason": verdict.reason or execution.reason,
@@ -368,10 +428,22 @@ class GenerationPipeline:
                             ],
                         }
                     )
+                    # Invalid inputs/traces are a construction failure, not
+                    # evidence that a cheaper model is insufficient. Do not
+                    # publish a high-tier label from an incomparable trial.
+                    if not prefix_matches or not complete_trace:
+                        rejections.append({
+                            "benchmark": task.benchmark, "instance_id": task.instance_id,
+                            "stage": "trial_integrity", "target_step": step_index,
+                            "reason": "locked input changed" if not prefix_matches else "incomplete execution trace",
+                        })
+                        return []
                     if accepted_attempt:
                         assignments = candidate
                         canonical = execution
-                        self.cache.invalidate_downstream(task.instance_id, step_index)
+                        self.cache.invalidate_downstream(
+                            task.instance_id, step_index, benchmark=task.benchmark
+                        )
                         accepted = True
                         break
                 if accepted:
@@ -418,8 +490,11 @@ class GenerationPipeline:
                 "search_hint": proposed[index - 1].start_tier,
                 "prompt_versions": copy.deepcopy(self.config.prompt_versions),
             }
-            if task.functions:
-                row["functions"] = list(copy.deepcopy(task.functions))
+            functions = task.functions
+            if "functions_by_step" in canonical.verification:
+                functions = canonical.verification["functions_by_step"][index - 1]
+            if functions:
+                row["functions"] = list(copy.deepcopy(functions))
             rows.append(row)
         return rows
 
@@ -474,6 +549,7 @@ class GenerationPipeline:
         reject_counts = Counter(str(row["benchmark"]) for row in rejections)
         return {
             "schema": "twinrouterbench.data_generation_run.v1",
+            "construction_protocol": "verified-sequential-locking-v2",
             "run_id": self.config.run_id,
             "status": status,
             "benchmarks": list(benchmarks),
@@ -482,6 +558,8 @@ class GenerationPipeline:
             "benchmark_suite_version": self.registry.version,
             "benchmark_suite_fingerprint": self.registry.fingerprint,
             "prompt_versions": copy.deepcopy(self.config.prompt_versions),
+            "preprocessing": {name: copy.deepcopy(self.registry.get(name).loader.filter_report)
+                              for name in benchmarks if getattr(self.registry.get(name).loader, "filter_report", None)},
             "source_registry": {name: rows for name, rows in sorted(sources.items())},
             "counts": {
                 "seed_instances": dict(sorted(seed_counts.items())),

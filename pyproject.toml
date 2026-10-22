@@ -27,6 +27,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+generation-swe = [
+  "mini-swe-agent==2.2.8",
+  "swebench==3.0.15",
+  "docker>=7.0.0",
+  "litellm>=1.50.0",
+]
 dynamic = [
   "mini-swe-agent>=2.2,<3",
   "swebench>=2.1.0",

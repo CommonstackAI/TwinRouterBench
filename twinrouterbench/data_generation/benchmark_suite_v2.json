@@ -1,6 +1,6 @@
 {
   "schema": "twinrouterbench.benchmark_suite.v1",
-  "version": "twinrouterbench-builtins-v2-2026-08-18",
+  "version": "twinrouterbench-builtins-v3-2026-10-22",
   "benchmarks": {
     "swebench": {
       "display_name": "SWE-Bench Verified",
@@ -30,7 +30,7 @@
       "source": "fixture://mtrag",
       "fixture_name": "mtrag",
       "loader": "normalized",
-      "evaluation": {"trial": "execution", "final": "backend_judge"}
+      "evaluation": {"trial": "backend_judge", "final": "backend_judge"}
     },
     "qmsum": {
       "display_name": "QMSum",
@@ -40,7 +40,7 @@
       "source": "fixture://qmsum",
       "fixture_name": "qmsum",
       "loader": "normalized",
-      "evaluation": {"trial": "execution", "final": "backend_judge"}
+      "evaluation": {"trial": "backend_judge", "final": "backend_judge"}
     },
     "pinchbench": {
       "display_name": "PinchBench",
