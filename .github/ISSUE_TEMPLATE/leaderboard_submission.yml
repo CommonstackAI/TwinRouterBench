@@ -136,19 +136,16 @@ body:
       description: Exact commands a maintainer can use to re-run or re-score. Include router import path and args.
       render: bash
       value: |
-        mapfile -t HELDOUT < TwinRouterBench/data/dynamic/dynamic_heldout100_ids.txt
         twinrouterbench dynamic run \
           --router-import your.module:YourRouter.from_cli_args \
           --router-arg ... \
           --router-label your_label \
           --output-dir runs/your_run \
-          --instances "${HELDOUT[@]}" \
           ...
 
         twinrouterbench dynamic score \
           --run-dir runs/your_run \
-          --router-label your_label \
-          --instance-ids-file TwinRouterBench/data/dynamic/dynamic_heldout100_ids.txt
+          --router-label your_label
     validations:
       required: true
 
@@ -157,7 +154,7 @@ body:
     attributes:
       label: Submission checklist
       options:
-        - label: "Evaluated on the official held-out-100 IDs in data/dynamic/dynamic_heldout100_ids.txt (or scored with --instance-ids-file pointing at that file)."
+        - label: "Evaluated with twinrouterbench dynamic on the official 100-case list in data/dynamic/dynamic_heldout100_ids.txt. The runner rejects every other SWE-bench id."
           required: true
         - label: "Used the locked pool / pricing / TTL tables under data/dynamic/ (no custom pricing tables)."
           required: true

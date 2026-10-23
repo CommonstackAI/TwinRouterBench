@@ -12,12 +12,12 @@ Fill the GitHub issue form only after reading this page.
 | Item | Requirement |
 |------|-------------|
 | Track | **Dynamic** SWE-bench Verified **held-out-100** |
-| Instance split | Exactly the IDs in [`data/dynamic/dynamic_heldout100_ids.txt`](../data/dynamic/dynamic_heldout100_ids.txt) |
+| Instance split | Exactly the IDs in [`data/dynamic/dynamic_heldout100_ids.txt`](../data/dynamic/dynamic_heldout100_ids.txt). This file is the public leaderboard. |
 | Pool / pricing / TTL | Locked tables under [`data/dynamic/`](../data/dynamic/) (no custom pricing) |
 | Sort key | `total_leaderboard_bill_usd` (lower is better), from official scorer |
 | Acceptance | Maintainer review; we may **re-score** or **re-run** before updating the board |
 
-Other tracks or custom splits may be discussed, but are not guaranteed to appear on the public board.
+The public leaderboard is this locked list: 18 Astropy and 82 Django. It is not a random draw from SWE-bench Verified. How the list was built is in the top-level README. Other tracks or custom splits may be discussed, but are not guaranteed to appear on the public board.
 
 ## How to submit (two places)
 
@@ -35,21 +35,18 @@ Hosting for the archive may be your own Hugging Face dataset, Zenodo, a GitHub R
 ## Required evaluation steps
 
 ```bash
-# 1) Run on the official held-out-100 split
-mapfile -t HELDOUT < TwinRouterBench/data/dynamic/dynamic_heldout100_ids.txt
+# 1) Run the official dynamic list. The runner refuses every other SWE-bench id.
 twinrouterbench dynamic run \
   --router-import your.module:YourRouter.from_cli_args \
   --router-arg ... \
   --router-label your_label \
   --output-dir runs/your_run \
-  --instances "${HELDOUT[@]}" \
   ...
 
-# 2) Score (subset file keeps headline metrics on held-out-100 only)
+# 2) Score. Result files outside the official list are rejected.
 twinrouterbench dynamic score \
   --run-dir runs/your_run \
-  --router-label your_label \
-  --instance-ids-file TwinRouterBench/data/dynamic/dynamic_heldout100_ids.txt
+  --router-label your_label
 
 # Optional audits
 twinrouterbench dynamic audit-infra --run-dir runs/your_run
