@@ -2,25 +2,23 @@
 
 Subcommands:
 
-* ``run``     -- run a router on SWE-bench Verified via mini-swe-agent.
+* ``run``     -- run a router on the official 100-case dynamic list via mini-swe-agent.
 * ``score``       -- score an existing run directory using the shared
                      scorer (same ``total_leaderboard_bill_usd`` metric and flags).
 * ``audit-infra`` -- scan ``results/*.json`` for fair-metrics infra exclusions.
 * ``audit-trace-cost`` -- sum ``step_cost_usd`` vs ``raw_usage.cost`` from ``*.trace.jsonl``.
 * ``render``      -- render a markdown leaderboard from one or more score files.
 
-Example (paths relative to the ``TwinRouterBench/`` install root)::
+Example (paths relative to the ``TwinRouterBench/`` install root).
+Omit ``--instances`` to run the whole official list. An id outside that list
+is rejected::
 
     miniswerouterbench run \\
-        --router-import swerouter.routers.gold_tier:GoldTierRouter.from_cli_args \\
-        --router-arg question_bank_path=data/static/question_bank.jsonl \\
-        --router-arg tier_to_model_path=data/dynamic/tier_to_model.json \\
-        --router-arg allowed_instance_ids=django__django-11133 \\
-        --router-arg label=gold_tier_oracle \\
-        --router-label gold_tier_oracle \\
-        --output-dir runs/mini_gt_one \\
-        --instances django__django-11133 \\
-        --max-steps 250 --budget-usd 3 --run-id mini_gt_one --force-rerun
+        --router-import your.module:YourRouter.from_cli_args \\
+        --router-label your_label \\
+        --output-dir runs/dynamic_official \\
+        --instances django__django-13410 \\
+        --max-steps 250 --budget-usd 3 --run-id dynamic_official --force-rerun
 
 Optional locked-table overrides (pin the same files across two routers)::
 
@@ -255,18 +253,50 @@ def _cmd_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def _read_instance_id_file(path: str) -> list[str]:
+    raw = Path(path).read_text(encoding="utf-8")
+    return [
+        ln.strip()
+        for ln in raw.splitlines()
+        if ln.strip() and not ln.strip().startswith("#")
+    ]
+
+
 def _cmd_score(args: argparse.Namespace) -> int:
     # Delegate wholesale to swerouter.leaderboard -- our results/*.json and
-    # *.trace.jsonl schemas match byte-for-byte.
+    # *.trace.jsonl schemas match byte-for-byte. Scoring stays on the
+    # official dynamic list; result files outside that list are refused.
     from swerouter.leaderboard.score import score_run_dir
 
-    allowlist = None
+    from miniswerouter.harness.official_split import (
+        assert_no_instances_outside_official,
+        load_official_dynamic_instance_ids,
+    )
+
+    official = load_official_dynamic_instance_ids()
+    official_set = set(official)
     if args.instance_ids_file:
-        raw = Path(args.instance_ids_file).read_text(encoding="utf-8")
-        allowlist = frozenset(
-            ln.strip()
-            for ln in raw.splitlines()
-            if ln.strip() and not ln.strip().startswith("#")
+        requested = _read_instance_id_file(args.instance_ids_file)
+        outside = [item for item in requested if item not in official_set]
+        if outside:
+            preview = ", ".join(outside[:8])
+            suffix = "" if len(outside) <= 8 else f" (+{len(outside) - 8} more)"
+            raise ValueError(
+                "dynamic score only accepts ids from the official "
+                f"{len(official)}-case list; refusing {len(outside)} id(s): "
+                f"{preview}{suffix}"
+            )
+        if not requested:
+            raise ValueError(f"instance id file is empty: {args.instance_ids_file}")
+        allowlist = frozenset(requested)
+    else:
+        allowlist = frozenset(official)
+
+    results_dir = Path(args.run_dir) / "results"
+    if results_dir.is_dir():
+        assert_no_instances_outside_official(
+            [path.stem for path in results_dir.glob("*.json")],
+            official=official,
         )
 
     score = score_run_dir(
@@ -405,7 +435,8 @@ def _build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
 
     run = sub.add_parser(
-        "run", help="Run a router on SWE-bench Verified via mini-swe-agent."
+        "run",
+        help="Run a router on the official 100-case dynamic list via mini-swe-agent.",
     )
     run.add_argument("--router-import", required=True, help="module:ClassOrFactory")
     run.add_argument(
@@ -426,8 +457,18 @@ def _build_parser() -> argparse.ArgumentParser:
         or os.environ.get("OPENROUTER_API_KEY"),
     )
     run.add_argument("--output-dir", required=True)
-    run.add_argument("--limit", type=int, default=None)
-    run.add_argument("--instances", nargs="*", default=None)
+    run.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Run at most N ids, in official-list order, after applying --instances. Cannot add ids outside the official list.",
+    )
+    run.add_argument(
+        "--instances",
+        nargs="*",
+        default=None,
+        help="Subset of the official 100-case dynamic list. Other SWE-bench ids are rejected. Omit to run the whole list.",
+    )
     run.add_argument("--workers", type=int, default=2)
     run.add_argument(
         "--max-steps", type=int, default=250,
@@ -519,8 +560,8 @@ def _build_parser() -> argparse.ArgumentParser:
     score.add_argument(
         "--instance-ids-file",
         default=None,
-        help="Optional text file: one instance_id per line (# comments allowed). "
-        "Only those results/*.json rows are scored; headline totals are subset-only.",
+        help="Optional subset of the official 100-case dynamic list, one instance_id per line. "
+        "Ids outside that list are rejected. Omit to score the whole official list.",
     )
     score.set_defaults(func=_cmd_score)
 

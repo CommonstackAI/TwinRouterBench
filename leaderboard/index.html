@@ -11,7 +11,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://commonstackai.github.io/TwinRouterBench/" />
     <meta property="og:title" content="TwinRouterBench | Per-Step LLM Routing Benchmark" />
-    <meta property="og:description" content="Train fast on 970 execution-verified routing labels, then validate live on 100 held-out SWE-bench Verified cases." />
+    <meta property="og:description" content="Train fast on 970 execution-verified routing labels. The public leaderboard scores a locked list of 100 SWE-bench Verified cases: 18 Astropy and 82 Django." />
     <meta property="og:image" content="https://commonstackai.github.io/TwinRouterBench/assets/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -105,7 +105,7 @@
         <article><strong>970</strong><span>execution-verified step labels</span></article>
         <article><strong>520</strong><span>source trajectories</span></article>
         <article><strong>5</strong><span>agent workloads</span></article>
-        <article><strong>100</strong><span>held-out live SWE-bench cases</span></article>
+        <article><strong>100</strong><span>locked leaderboard cases (18 Astropy, 82 Django)</span></article>
       </section>
 
       <section class="project-section" id="method">
@@ -125,7 +125,7 @@
             <span class="track-number teal">02</span>
             <h3>Dynamic evaluation</h3>
             <p>The router selects a model for every live agent call. Official SWE-bench resolution, realized API spend, step counts, cache policy, and the model pool are evaluated together.</p>
-            <ul><li>100 held-out SWE-bench Verified cases</li><li>End-to-end task success and dollar cost</li><li>Comparable public leaderboard protocol</li></ul>
+            <ul><li>Leaderboard is the locked 100-case list (18 Astropy, 82 Django)</li><li>End-to-end task success and dollar cost</li><li>Every router is scored on this same list</li></ul>
           </article>
         </div>
       </section>
@@ -155,7 +155,7 @@ twinrouterbench data generate \
           <div>
             <p class="eyebrow">Public results</p>
             <h2 id="pageTitle">Best Routers by Resolve Rate</h2>
-            <p class="hero-copy">Compare conditional per-call routers on held-out SWE-bench Verified runs and inspect the static tier-supervision bank.</p>
+            <p class="hero-copy">Compare routers on the locked 100-case leaderboard (18 Astropy, 82 Django) and inspect the static tier-supervision bank.</p>
           </div>
           <div class="hero-stats" id="heroStats"></div>
         </div>

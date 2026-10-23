@@ -34,9 +34,9 @@ faces: **which model should handle the next call given the full current prefix?*
 | Track | What it measures | Public artifact |
 |---|---|---|
 | **Static** | Cheapest-sufficient tier at each routed step, verified through downgrade search and mixed-model execution. | **970 labels**, **520 trajectories**, **5 workloads** |
-| **Dynamic** | End-to-end task success and realized API spend while routing every live agent call. | **100 held-out SWE-bench Verified cases** |
+| **Dynamic** | End-to-end task success and realized API spend while routing every live agent call. | **Leaderboard: the locked 100 cases** (18 Astropy, 82 Django) |
 
-> **Headline result.** The trained router resolves **75/100** held-out cases for
+> **Headline result.** On this leaderboard list, the trained router resolves **75/100** cases for
 > **$25.66**, compared with **74/100** for the **$54.73** all-Opus reference—a
 > **53.1% cost reduction** with comparable task success.
 
@@ -251,30 +251,28 @@ Other useful keys on the same summary object:
 
 This forwards to **`miniswerouter.cli`** (`run`, `score`, `audit-infra`, `audit-trace-cost`, `render`).
 
-### Paper held-out split (100 SWE-bench Verified instances)
+### Leaderboard: these 100 cases
 
-The paper’s dynamic held-out evaluation uses a fixed **100-instance** subset of **SWE-bench Verified**, disjoint from the static SWE supervision instances. The locked instance-id list is:
+The public leaderboard scores **exactly** the instance IDs in [`data/dynamic/dynamic_heldout100_ids.txt`](data/dynamic/dynamic_heldout100_ids.txt). Every router on the board is compared on this list. A run on any other subset is not a leaderboard result. The same list is what the paper reports.
 
-**[`data/dynamic/dynamic_heldout100_ids.txt`](data/dynamic/dynamic_heldout100_ids.txt)** — one `instance_id` per line (18 `astropy__*`, 82 `django__*`).
+This list is not a random sample of the 500 SWE-bench Verified instances. It was built from the two dynamic result sets. That construction matches the locked file line for line:
 
-**Selection rule** (same as `leaderboard/data/leaderboard.json`):
+1. Keep IDs present in both result sets. SR-KNN has 294 result files and UncommonRoute has 122; they share 120 IDs. Those 120 IDs are only Astropy and Django.
+2. Remove IDs that also appear in the 40-instance SWE static supervision set. That removes 19 IDs and leaves 101.
+3. Sort the remaining IDs lexicographically and keep the first 100. The ID left out is `django__django-13658`.
 
-1. Take instance IDs present in both SR-KNN and UncommonRoute dynamic result sets.
-2. Remove all CommonRouterBench SWE static supervision instances.
-3. Sort the remaining IDs lexicographically and keep the first 100.
+The leaderboard is therefore **18 `astropy__*` cases and 82 `django__*`**. It does not include the other repositories in SWE-bench Verified, and it does not overlap the static SWE supervision instances.
 
-To reproduce that split with the dynamic harness:
+`twinrouterbench dynamic run` runs this list and no other SWE-bench instances. Omit `--instances` to run all 100. Passing an id outside the list fails. `dynamic score` refuses result files outside the list.
 
 ```bash
-# run (pass IDs explicitly)
-mapfile -t HELDOUT < TwinRouterBench/data/dynamic/dynamic_heldout100_ids.txt
-twinrouterbench dynamic run ... --instances "${HELDOUT[@]}"
+# run the official 100
+twinrouterbench dynamic run ...
 
-# score an existing run on only this split
+# score that run
 twinrouterbench dynamic score \
   --run-dir runs/your_run \
-  --router-label your_label \
-  --instance-ids-file TwinRouterBench/data/dynamic/dynamic_heldout100_ids.txt
+  --router-label your_label
 ```
 
 ### `run` — main flags
@@ -286,8 +284,8 @@ twinrouterbench dynamic score \
 | `--router-label` | Required label stored in `eval_summary.json` and traces. |
 | `--output-dir` | Required. Run artifacts root (created if needed). |
 | `--base-url` / `--api-key` | Default from `SWEROUTER_*` then `OPENROUTER_*` env after `.env` load. |
-| `--instances id1 id2 …` | Optional explicit SWE-bench instance IDs. |
-| `--limit N` | Optional cap on how many dataset instances to consider (ordering is harness-defined). |
+| `--instances id1 id2 …` | Optional subset of the official 100. Ids outside that list are rejected. |
+| `--limit N` | Optional cap on how many of those official ids to run, in list order. |
 | `--workers` | Parallel workers (default 2). |
 | `--max-steps` | Agent step limit (default 250, matches mini-swe-agent SWE profile). |
 | `--budget-usd` | Agent cost limit in USD (default 3). |
@@ -311,24 +309,9 @@ Under `--output-dir`:
 
 Long stretches without new console output are normal (Docker pull, repository setup, multi-step LLM calls).
 
-### Example — gold-tier oracle (paths under TwinRouterBench)
+### Example — gold-tier oracle
 
-From the checkout parent directory, after installing `[dynamic]`:
-
-```bash
-twinrouterbench dynamic run \
-  --router-import swerouter.routers.gold_tier:GoldTierRouter.from_cli_args \
-  --router-arg question_bank_path=TwinRouterBench/data/static/question_bank.jsonl \
-  --router-arg tier_to_model_path=TwinRouterBench/data/dynamic/tier_to_model.json \
-  --router-arg allowed_instance_ids=django__django-11133 \
-  --router-arg label=gold_tier_oracle \
-  --router-label gold_tier_oracle \
-  --output-dir runs/mini_gt_one \
-  --instances django__django-11133 \
-  --max-steps 250 --budget-usd 3 --run-id mini_gt_one --force-rerun
-```
-
-Adjust `question_bank_path` if your bank lives elsewhere.
+The gold-tier oracle reads labels from the static question bank. Those SWE instances are not on the dynamic list, and `dynamic run` rejects them. It is not a dynamic-track command.
 
 ### Example — Semantic Router **SR KNN** router
 
@@ -346,7 +329,7 @@ twinrouterbench dynamic run \
   --router-arg category=other \
   --router-label sr_knn_smoke \
   --output-dir runs/sr_knn_smoke \
-  --instances django__django-11066 django__django-13410 \
+  --instances django__django-13410 django__django-11095 \
   --workers 2 \
   --max-steps 40 \
   --budget-usd 5.0 \
@@ -432,7 +415,7 @@ Under `TwinRouterBench/scripts/examples/`:
 | `miniswerouter/` | Dynamic track on **mini-swe-agent**. |
 | `swerouter/` | Router protocol, pricing, cache simulation, harness, and leaderboard. |
 | `data/static/` | Static track JSONL: `question_bank.jsonl`, `manifest.json`. |
-| `data/dynamic/` | Dynamic track locked JSON: `model_pool.json`, `model_pricing.json`, `ttl_policy.json`, `tier_to_model.json`, `sr_knn_to_pool.json`, plus `dynamic_heldout100_ids.txt` (paper’s 100-case SWE-bench Verified held-out split). |
+| `data/dynamic/` | Dynamic track locked JSON: `model_pool.json`, `model_pricing.json`, `ttl_policy.json`, `tier_to_model.json`, `sr_knn_to_pool.json`, plus `dynamic_heldout100_ids.txt` (the public leaderboard: these 100 cases). |
 | `twinrouterbench/data_generation/` | Static data construction, review, replay, provenance, and publish pipeline. |
 | `leaderboard/` | Project page and interactive static/dynamic leaderboard published through GitHub Pages. |
 | `twinrouterbench/` | Unified CLI dispatcher. |
@@ -448,7 +431,7 @@ Public leaderboard: [commonstackai.github.io/TwinRouterBench](https://commonstac
 
 Short path:
 
-1. Evaluate on [`data/dynamic/dynamic_heldout100_ids.txt`](data/dynamic/dynamic_heldout100_ids.txt).
+1. Evaluate on the leaderboard list: [`data/dynamic/dynamic_heldout100_ids.txt`](data/dynamic/dynamic_heldout100_ids.txt). That file is the board.
 2. Package the held-out-100 scoreable core and host it at an external URL (see the guide).
 3. Open [Leaderboard submission](https://github.com/CommonstackAI/TwinRouterBench/issues/new?template=leaderboard_submission.yml).
 

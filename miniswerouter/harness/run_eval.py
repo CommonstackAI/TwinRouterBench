@@ -100,23 +100,35 @@ def _resolve_instance_list(
     selected: Iterable[str] | None,
     limit: int | None,
 ) -> list[str]:
+    """Resolve the dynamic run to the official 100-case list.
+
+    The SWE-bench dataset is only used to confirm those ids still exist.
+    Ids outside the official list are rejected. Omitting ``selected`` runs
+    the whole list.
+    """
+
+    from miniswerouter.harness.official_split import (
+        load_official_dynamic_instance_ids,
+        select_official_dynamic_ids,
+    )
+
+    official = load_official_dynamic_instance_ids()
+    chosen = select_official_dynamic_ids(
+        None if selected is None else list(selected),
+        official=official,
+        limit=limit,
+    )
     from swebench.harness.utils import load_swebench_dataset
 
     dataset = list(load_swebench_dataset(dataset_name, dataset_split))
-    all_ids = [row["instance_id"] for row in dataset]
-    if selected is not None:
-        wanted = set(selected)
-        missing = wanted - set(all_ids)
-        if missing:
-            raise ValueError(
-                f"requested instance_ids not in dataset: {sorted(missing)[:5]}..."
-            )
-        ordered = [i for i in all_ids if i in wanted]
-    else:
-        ordered = all_ids
-    if limit is not None:
-        ordered = ordered[:limit]
-    return ordered
+    known = {row["instance_id"] for row in dataset}
+    missing = [item for item in chosen if item not in known]
+    if missing:
+        raise ValueError(
+            "official dynamic ids missing from the SWE-bench dataset: "
+            f"{missing[:5]}"
+        )
+    return chosen
 
 
 def _result_path(output_dir: Path, instance_id: str) -> Path:

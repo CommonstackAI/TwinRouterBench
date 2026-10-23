@@ -3,7 +3,7 @@
 | Subdirectory | Track | Contents |
 |--------------|-------|----------|
 | **`static/`** | Static | `question_bank.jsonl`, `manifest.json` — tier routing supervision consumed by `main.dataset` / `main.eval`. |
-| **`dynamic/`** | Dynamic | Locked JSON for SWE runs: model pool, pricing, TTL policy, tier map, SR-KNN label mapping, etc. Also `dynamic_heldout100_ids.txt` — the paper’s fixed 100 SWE-bench Verified held-out instance IDs (see top-level README). |
+| **`dynamic/`** | Dynamic | Locked JSON for SWE runs: model pool, pricing, TTL policy, tier map, SR-KNN label mapping, etc. Also `dynamic_heldout100_ids.txt` — the public leaderboard. The board scores exactly these 100 SWE-bench Verified IDs (18 Astropy, 82 Django). See the top-level README for how the list was built. |
 
 Code defaults: `main.dataset.STATIC_DATA_DIR` → `TwinRouterBench/data/static/`; harness defaults for pool/pricing → `TwinRouterBench/data/dynamic/`.
 
