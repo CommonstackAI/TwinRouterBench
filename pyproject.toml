@@ -27,6 +27,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+generation-swe = [
+  "mini-swe-agent==2.2.8",
+  "swebench==3.0.15",
+  "docker>=7.0.0",
+  "litellm>=1.50.0",
+]
 dynamic = [
   "mini-swe-agent>=2.2,<3",
   "swebench>=2.1.0",
@@ -43,6 +49,7 @@ Leaderboard = "https://commonstackai.github.io/TwinRouterBench/"
 
 [project.scripts]
 twinrouterbench = "twinrouterbench.cli:main"
+twinrouterbench-opencode-router = "twinrouterbench.opencode_router.proxy:main"
 CommonRouterBench = "main.cli:main"
 miniswerouterbench = "miniswerouter.cli:main"
 swerouterbench = "swerouter.cli:main"
@@ -63,6 +70,9 @@ main = [
 ]
 swerouter = ["../data/dynamic/*.json"]
 twinrouterbench = [
+  "opencode_router/*.json",
+  "opencode_router/*.mjs",
+  "opencode_router/*.example.py",
   "data_generation/*.json",
   "data_generation/fixtures/*.json",
   "data_generation/prompts/*.txt",

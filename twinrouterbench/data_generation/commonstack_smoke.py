@@ -119,6 +119,7 @@ class CommonStackSmokeBackend(MockBackend):
         *,
         target_step: int,
         generation_parameters: dict[str, Any],
+        locked_execution: ExecutionResult | None = None,
     ) -> ExecutionResult:
         self._probe(
             "mixed",
@@ -134,6 +135,7 @@ class CommonStackSmokeBackend(MockBackend):
             assignments,
             target_step=target_step,
             generation_parameters=generation_parameters,
+            locked_execution=locked_execution,
         )
 
     def judge_open_ended(

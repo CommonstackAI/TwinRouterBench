@@ -296,6 +296,11 @@ class PassThroughEvaluator:
         backend: ExecutionBackend,
     ) -> JudgeResult:
         del task, backend
+        if execution.verified is not True:
+            raise ValueError(
+                "execution evaluator requires an official harness verdict; "
+                "an unverified provider response needs an independent evaluator"
+            )
         passed = bool(execution.passed)
         return JudgeResult(
             passed=passed,

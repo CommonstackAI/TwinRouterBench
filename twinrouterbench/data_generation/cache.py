@@ -15,6 +15,8 @@ class CacheKey:
     target_step: int
     assignments: tuple[tuple[str, str], ...]
     generation_parameters: str
+    benchmark: str = ""
+    locked_prefix_key: str = ""
 
 
 class TrialCache:
@@ -30,6 +32,7 @@ class TrialCache:
         target_step: int,
         assignments: Sequence[Assignment],
         generation_parameters: dict[str, Any],
+        *, benchmark: str = "", locked_prefix_key: str = "",
     ) -> CacheKey:
         return CacheKey(
             instance_id=instance_id,
@@ -38,6 +41,8 @@ class TrialCache:
             generation_parameters=json.dumps(
                 generation_parameters, sort_keys=True, separators=(",", ":")
             ),
+            benchmark=benchmark,
+            locked_prefix_key=locked_prefix_key,
         )
 
     def get(self, key: CacheKey) -> ExecutionResult | None:
@@ -51,11 +56,14 @@ class TrialCache:
     def put(self, key: CacheKey, result: ExecutionResult) -> None:
         self._items[key] = result
 
-    def invalidate_downstream(self, instance_id: str, changed_step: int) -> int:
+    def invalidate_downstream(
+        self, instance_id: str, changed_step: int, *, benchmark: str = ""
+    ) -> int:
         stale = [
             key
             for key in self._items
-            if key.instance_id == instance_id and key.target_step > changed_step
+            if key.instance_id == instance_id and key.benchmark == benchmark
+            and key.target_step > changed_step
         ]
         for key in stale:
             del self._items[key]
