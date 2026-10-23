@@ -4,7 +4,7 @@ The scorer is pure offline: it reads ``results/<instance>.json`` and the
 per-instance ``*.trace.jsonl`` files produced by :mod:`swerouter.harness`` and
 applies the penalty-inclusive leaderboard formula below.
 
-Penalty rule (v2 â€?fixed opportunity-cost add-on)
+Penalty rule (v2 â€” fixed opportunity-cost add-on)
 -------------------------------------------------
 * **Resolved** instance: ``instance_bill = router_actual_cost``.
 * **Unresolved** instance: ``instance_bill = router_actual_cost + FAILURE_PENALTY_USD``.
@@ -12,13 +12,13 @@ Penalty rule (v2 â€?fixed opportunity-cost add-on)
 ``FAILURE_PENALTY_USD`` is a fixed constant (default \$0.60) representing the
 per-case price of a hypothetical perfect solver.  This applies uniformly to
 every policy (including the unrouted baseline), decouples the penalty from
-step count and pricing tables, avoids "long trace â†?exploding penalty"
+step count and pricing tables, avoids "long trace â†’ exploding penalty"
 artifacts, and keeps the leaderboard formula trivial to describe.
 
 Outputs
 -------
 
-* ``total_leaderboard_bill_usd`` â€?sole leaderboard sort key (lower is better).
+* ``total_leaderboard_bill_usd`` â€” sole leaderboard sort key (lower is better).
   Equals ``Î£ router_actual + 0.60 Ã— #unresolved``.
   This is **not** raw API spend; for realized routed spend only use
   ``total_router_cost_usd``.
