@@ -14,10 +14,12 @@
   },
   "dynamic": {
     "name": "Dynamic SWE-bench Verified heldout",
-    "description": "End-to-end routed SWE-bench Verified evaluation on 100 heldout cases shared by SR-KNN and UncommonRoute dynamic results, excluding CommonRouterBench SWE static supervision instances.",
+    "description": "The public leaderboard scores exactly these 100 locked SWE-bench Verified cases (18 Astropy, 82 Django). Every router is compared on this list. It is not a random sample of the 500-case suite.",
     "split": {
       "cases": 100,
-      "rule": "Take instances shared by SR-KNN and UncommonRoute dynamic results; remove all CommonRouterBench SWE static supervision instances; sort instance ids lexicographically and keep the first 100.",
+      "astropy_cases": 18,
+      "django_cases": 82,
+      "rule": "The public leaderboard is exactly these 100 locked cases, not a random sample of SWE-bench Verified. Keep IDs present in both the SR-KNN (294) and UncommonRoute (122) dynamic result sets (120 shared, Astropy and Django only); remove the 19 that also belong to the SWE static supervision set (101 candidates remain); sort lexicographically and keep the first 100. The ID left out is django__django-13658. The list is 18 Astropy and 82 Django.",
       "commonrouterbench_swe_static_cases": 40,
       "sr_knn_dynamic_result_cases": 294,
       "uncommonroute_dynamic_result_cases": 122,
