@@ -1,9 +1,9 @@
 {
   "schema": "twinrouterbench_leaderboard_v1",
-  "generated_at": "2026-08-18",
+  "generated_at": "2026-10-28",
   "version": "paper-v2 · static-970 · dynamic-100",
   "title": "TwinRouterBench Leaderboard",
-  "notice": "Paper v2 is public with 4 dynamic router runs, 100 held-out SWE-bench Verified cases, and 970 static per-call labels.",
+  "notice": "Paper v2 reports 4 dynamic router runs on 100 held-out SWE-bench Verified cases and 970 static labels. The board also lists reviewed community submissions.",
   "links": {
     "github": "https://github.com/CommonstackAI/TwinRouterBench",
     "submission": "https://github.com/CommonstackAI/TwinRouterBench/issues/new?template=leaderboard_submission.yml",
@@ -125,6 +125,37 @@
           "Cost-efficient"
         ],
         "notes": "Trained UncommonRoute result from new_ur_verified122 dynamic artifacts."
+      },
+      {
+        "id": "jiuwen_router",
+        "name": "Jiuwen Router",
+        "kind": "Submitted router",
+        "benchmark": "SWE-bench Verified heldout",
+        "cases": 100,
+        "resolved": 79,
+        "resolve_rate": 0.79,
+        "patch_applied": 98,
+        "total_cost_usd": 59.1213125,
+        "avg_cost_usd": 0.591213125,
+        "median_cost_usd": 0.4715845,
+        "total_steps": 5247,
+        "avg_steps": 52.47,
+        "median_steps": 46.0,
+        "finished_by": {
+          "Submitted": 98,
+          "LimitsExceeded": 2
+        },
+        "model_distribution": {
+          "anthropic/claude-opus-4.6": 2954,
+          "google/gemini-3-flash-preview": 2292,
+          "minimax/minimax-m2.7": 1
+        },
+        "badges": [
+          "Submitted",
+          "Paper"
+        ],
+        "notes": "Reviewed submission on the locked 100. Cost is traced API spend. Three rejected Gemini calls totaling $0.5997 were billed but not written into the trace.",
+        "source": "https://github.com/CommonstackAI/TwinRouterBench/issues/8"
       }
     ]
   },
