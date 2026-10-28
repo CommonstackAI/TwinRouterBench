@@ -92,7 +92,7 @@
     <text x="0" y="0" class="metric">100</text>
     <text x="0" y="27" class="metric-label">held-out cases</text>
     <text x="178" y="0" class="metric">75%</text>
-    <text x="178" y="27" class="metric-label">best resolve rate</text>
+    <text x="178" y="27" class="metric-label">trained router</text>
     <text x="358" y="0" class="metric">−53.1%</text>
     <text x="358" y="27" class="metric-label">cost vs Opus ref.</text>
   </g>
