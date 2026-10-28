@@ -19,7 +19,7 @@
     <path d="M272 38v160" stroke="#e2e8f0"/>
     <g transform="translate(320 54)"><text class="metric">100</text><text y="38" class="label">held-out SWE-bench</text><text y="72" class="label">Verified cases</text></g>
     <path d="M548 38v160" stroke="#e2e8f0"/>
-    <g transform="translate(600 54)"><text class="metric">75%</text><text y="38" class="label">best resolve rate</text><text y="72" class="label">live dynamic track</text></g>
+    <g transform="translate(600 54)"><text class="metric">75%</text><text y="38" class="label">trained router</text><text y="72" class="label">resolve rate</text></g>
     <path d="M792 38v160" stroke="#e2e8f0"/>
     <g transform="translate(835 54)"><text class="metric">−53.1%</text><text y="38" class="label">cost vs Opus</text><text y="72" class="label">reference run</text></g>
   </g>
