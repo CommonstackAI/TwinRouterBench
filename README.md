@@ -133,6 +133,15 @@ If you run `twinrouterbench dynamic` or `twinrouterbench swe` without `[dynamic]
 
 **Common pitfall:** `OPENROUTER_BASE_URL` and `OPENROUTER_API_KEY` must refer to the **same** provider. Mixing a custom gateway base URL with another vendor’s API key (or the reverse) yields **401** or “invalid access key”.
 
+**Example: other OpenAI-compatible gateways.** Any gateway that serves the same vendor-prefixed model ids can be used by pointing both variables at it. For example, [TrustedRouter](https://trustedrouter.com/docs) serves the four dynamic-pool models in `data/dynamic/model_pricing.json` under the same ids:
+
+```bash
+export OPENROUTER_BASE_URL=https://api.trustedrouter.com/v1
+export OPENROUTER_API_KEY="$TRUSTEDROUTER_API_KEY"
+```
+
+Non-`openrouter.ai` base URLs use LiteLLM's `openai/` prefix automatically (see `SWEROUTER_LITELLM_PROVIDER_PREFIX` in `miniswerouter/agent/model.py`).
+
 Shell snippets under `TwinRouterBench/scripts/examples/env.inc.sh` mirror the Python alias logic for bash-driven runs.
 
 ### Prerequisites (dynamic track)
